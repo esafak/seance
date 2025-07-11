@@ -1,0 +1,20 @@
+type
+  MessageRole* = enum system, user, assistant
+  ChatMessage* = object
+    role*: MessageRole
+    content*: string
+
+  ChatResult* = object
+    content*: string
+    model*: string
+
+  LLMProvider* = ref object of RootObj
+
+method chat*(provider: LLMProvider, messages: seq[ChatMessage]): ChatResult {.base.} =
+  raise newException(Defect, "chat() not implemented for this provider")
+
+proc `$`*(role: MessageRole): string =
+  case role:
+  of system: "system"
+  of user: "user"
+  of assistant: "assistant"
