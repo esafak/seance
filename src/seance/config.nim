@@ -8,6 +8,7 @@ type
   Config* = object
     providers*: Table[string, ProviderConfig]
     defaultProvider*: string
+    autoSession*: bool
 
   ConfigError* = object of CatchableError
 
@@ -39,9 +40,13 @@ proc loadConfig*(path: string = ""): Config =
     if dp.len > 0:
       defaultProvider = dp
 
+  var autoSession = true
+  if toml.hasKey("auto_session"):
+    autoSession = toml["auto_session"].getBool(true)
+
   var providersTable = initTable[string, ProviderConfig]()
   for section, table in toml.tableVal.pairs:
-    if section == "default_provider" or table.kind != TomlValueKind.Table:
+    if section == "default_provider" or section == "auto_session" or table.kind != TomlValueKind.Table:
       continue # Skip the default_provider key and other non-table sections at the root
 
     let key = table.getOrDefault("key").getStr("")
@@ -52,4 +57,4 @@ proc loadConfig*(path: string = ""): Config =
 
     providersTable[section] = ProviderConfig(key: key, model: model)
 
-  return Config(providers: providersTable, defaultProvider: defaultProvider)
+  return Config(providers: providersTable, defaultProvider: defaultProvider, autoSession: autoSession)

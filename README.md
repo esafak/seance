@@ -61,6 +61,34 @@ seance chat "Explain the theory of relativity" --provider gemini
 cat src/seance.nim | seance chat "Explain what this Nim code does."
 ```
 
+### 3. Session Management
+
+Seance supports session management, allowing you to continue conversations and manage session history.
+
+By default, Seance will automatically create a session for each conversation. You can disable this behavior by setting `auto_session = false` in your `~/.config/seance/config.toml` file.
+
+- **Listing Sessions**: To see a list of all your active sessions, use the `list` command:
+
+  ```bash
+  seance list
+  ```
+
+- **Continuing a Session**: To continue a previous conversation, use the `--session` flag with the session ID:
+
+  ```bash
+  seance chat "Tell me more about that." --session <session_id>
+  ```
+
+- **Pruning Sessions**: To clean up old sessions, you can use the `prune` command. This will delete all sessions older than a specified number of days (default is 10).
+
+  ```bash
+  # Prune sessions older than 10 days
+  seance prune
+
+  # Prune sessions older than 30 days
+  seance prune --days 30
+  ```
+
 ## Development
 
 To contribute to Seance or run it from the source:
