@@ -15,5 +15,6 @@ dispatchMulti(
       "dryRun": "If true, prints the final prompt instead of sending it to the LLM."
     },
   ],
+  [commands.sessions],
   [commands.version],
 )

@@ -10,6 +10,10 @@ type
 
   LLMProvider* = ref object of RootObj
 
+  Session* = object
+    provider*: string
+    messages*: seq[ChatMessage]
+
 method chat*(provider: LLMProvider, messages: seq[ChatMessage]): ChatResult {.base.} =
   raise newException(Defect, "chat() not implemented for this provider")
 

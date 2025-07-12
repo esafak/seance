@@ -1,7 +1,9 @@
 import config
 import providers
+import session
 
-import strutils, tables
+import strutils, tables, times, uuids
+import std/json
 import std/logging
 import std/os
 import std/strutils
@@ -15,7 +17,7 @@ proc newProviderByName(name: string, conf: ProviderConfig): LLMProvider =
     of "openai": return newOpenAIProvider(conf)
     else: raise newException(ConfigError, "Unknown or unsupported provider: " & name)
 
-proc chat*(prompt: seq[string], provider: string = "", model: string = "", systemPrompt: string = "", verbose: int = 0, dryRun: bool = false) =
+proc chat*(prompt: seq[string], provider: string = "", model: string = "", systemPrompt: string = "", session: string = "", verbose: int = 0, dryRun: bool = false) =
   ## Sends a single chat prompt to the specified provider and prints the response.
   var stdinContent = ""
   if not isatty(stdin):
@@ -76,19 +78,52 @@ proc chat*(prompt: seq[string], provider: string = "", model: string = "", syste
     error "API key for provider '" & actualProviderName & "' is not set in configuration."
     quit(1)
 
-  var messages: seq[ChatMessage]
+  var sessionId = if session.len > 0: session else: $genUUID()
+  var sessionObj = loadSession(sessionId)
+  if session.len == 0:
+    stderr.writeLine "To continue this session, call 'seance chat --session=" & sessionId & " ...'"
+
   if systemPrompt.len > 0:
-    messages.add(ChatMessage(role: system, content: systemPrompt))
-  messages.add(ChatMessage(role: user, content: finalPrompt))
+    sessionObj.messages.add(ChatMessage(role: system, content: systemPrompt))
+  sessionObj.messages.add(ChatMessage(role: user, content: finalPrompt))
 
   try:
     var llmProvider = newProviderByName(actualProviderName, providerConf)
-    let result = llmProvider.chat(messages)
+    let result = llmProvider.chat(sessionObj.messages)
     info "Using " & result.model
     echo result.content
+    sessionObj.messages.add(ChatMessage(role: assistant, content: result.content))
+    sessionObj.provider = actualProviderName
+    saveSession(sessionId, sessionObj)
   except Exception as e:
     error "An error occurred during chat: " & e.msg
     quit(1)
+
+proc sessions*(prune: bool = false) =
+  ## Lists all available sessions.
+  let sessionDir = getHomeDir() / ".config" / "seance" / "sessions"
+  if not dirExists(sessionDir):
+    echo "No sessions found."
+    return
+
+  echo "Session ID                                 | Age                | Provider           | Description"
+  echo "--------------------------------------+--------------------+--------------------+------------------"
+
+  for file in walkDir(sessionDir):
+    if file.kind == pcFile and file.path.endsWith(".json"):
+      let sessionId = file.path.splitFile().name
+      let sessionFile = session.getSessionFilePath(sessionId)
+      let lastModified = getLastModificationTime(sessionFile)
+      let age = getTime() - lastModified
+
+      if prune and age.inDays > 7:
+        removeFile(sessionFile)
+        echo "Deleted session " & sessionId
+      else:
+        let sessionObj = session.loadSession(sessionId)
+        if sessionObj.messages.len > 0:
+          let description = sessionObj.messages[0].content.strip().splitLines()[0]
+          echo sessionId & " | " & $age & " | " & sessionObj.provider & " | " & description
 
 proc version*() =
   ## Displays the current version of the LLM Client.
