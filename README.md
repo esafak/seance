@@ -1,8 +1,8 @@
 # Seance
 
-[![GitHub Workflow Status](https://github.com/emre/seance/actions/workflows/release.yml/badge.svg)](https://github.com/emre/seance/actions)
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/emre/seance)](https://github.com/emre/seance/releases)
-[![GitHub license](https://img.shields.io/github/license/emre/seance)](LICENSE)
+[![GitHub workflow status](https://github.com/esafak/seance/actions/workflows/release.yml/badge.svg)](https://github.com/esafak/seance/actions/workflows/release.yml)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/esafak/seance)](https://github.com/emre/seance/releases)
+[![GitHub license](https://img.shields.io/github/license/esafak/seance)](LICENSE)
 
 A CLI tool and library for interacting with various Large Language Models (LLMs).
 
