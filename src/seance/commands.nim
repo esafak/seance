@@ -5,6 +5,7 @@ import strutils, tables
 import std/logging
 import std/os
 import std/strutils
+import std/terminal
 
 proc newProviderByName(name: string, conf: ProviderConfig): LLMProvider =
   ## Factory function to create a provider instance from its name.
@@ -14,10 +15,31 @@ proc newProviderByName(name: string, conf: ProviderConfig): LLMProvider =
     of "openai": return newOpenAIProvider(conf)
     else: raise newException(ConfigError, "Unknown or unsupported provider: " & name)
 
-proc chat*(prompt: seq[string], provider: string = "", model: string = "", systemPrompt: string = "", verbose: int = 0) =
+proc chat*(prompt: seq[string], provider: string = "", model: string = "", systemPrompt: string = "", verbose: int = 0, dryRun: bool = false) =
   ## Sends a single chat prompt to the specified provider and prints the response.
-  if prompt.len != 1:
-      raise newException(ValueError, "Prompt must contain exactly one element.")
+  var stdinContent = ""
+  if not isatty(stdin):
+    stdinContent = stdin.readAll()
+
+  var finalPrompt: string = ""
+  if prompt.len > 0 and stdinContent.len > 0:
+    finalPrompt = prompt.join(" ") & "\n\n" & stdinContent
+  elif prompt.len > 0:
+    finalPrompt = prompt.join(" ")
+  elif stdinContent.len > 0:
+    finalPrompt = stdinContent
+  else:
+    echo "Error: No prompt provided either as an argument or via stdin."
+    quit(1)
+
+  if finalPrompt.len == 0:
+    echo "Error: Prompt is empty."
+    quit(1)
+
+  if dryRun:
+    echo finalPrompt
+    quit(0)
+
   let logLevel = case verbose:
                  of 0: lvlInfo
                  of 1: lvlDebug
@@ -57,12 +79,12 @@ proc chat*(prompt: seq[string], provider: string = "", model: string = "", syste
   var messages: seq[ChatMessage]
   if systemPrompt.len > 0:
     messages.add(ChatMessage(role: system, content: systemPrompt))
-  messages.add(ChatMessage(role: user, content: prompt[0]))
+  messages.add(ChatMessage(role: user, content: finalPrompt))
 
   try:
     var llmProvider = newProviderByName(actualProviderName, providerConf)
     let result = llmProvider.chat(messages)
-    info "Using" & result.model
+    info "Using " & result.model
     echo result.content
   except Exception as e:
     error "An error occurred during chat: " & e.msg
