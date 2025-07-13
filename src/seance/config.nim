@@ -1,4 +1,5 @@
-import os, parsetoml, tables
+import os, tables, strutils, streams
+import std/parsecfg
 
 type
   ProviderConfig* = object
@@ -12,49 +13,84 @@ type
 
   ConfigError* = object of CatchableError
 
+var configPath: string
+
+proc setConfigPath*(path: string) =
+  configPath = path
+
 proc getConfigPath*(): string =
   ## Returns the standard path for the config file.
+  if configPath.len > 0:
+    return configPath
   let home = getHomeDir()
   let configDir = home / ".config" / "seance"
-  return configDir / "config.toml"
+  return configDir / "config.ini"
 
 proc loadConfig*(path: string = ""): Config =
-  ## Loads and parses the TOML config file.
-  ## Raises ConfigError if the file is not found or has validation errors.
+  ## Loads and parses the INI config file.
+  ## Raises ConfigError on validation errors.
   let configPath = if path.len > 0: path else: getConfigPath()
 
   if not fileExists(configPath):
     raise newException(ConfigError, "Config file not found at: " & configPath &
       "\nPlease create it with your API keys.")
 
-  let toml = try:
-    parseFile(configPath)
-  except TomlError as e:
-    raise newException(ConfigError, "Failed to parse config file '" & configPath & "': " & e.msg)
+  var p: CfgParser
+  var f: Stream
+  try:
+    f = newFileStream(configPath, fmRead)
+  except IOError as e:
+    raise newException(ConfigError, "Cannot open config file: " & e.msg)
 
-
-  # Read the top-level default_provider. Default to "openai" if not present.
-  var defaultProvider = "openai"
-  if toml.hasKey("default_provider"):
-    let dp = toml["default_provider"].getStr()
-    if dp.len > 0:
-      defaultProvider = dp
-
-  var autoSession = true
-  if toml.hasKey("auto_session"):
-    autoSession = toml["auto_session"].getBool(true)
+  open(p, f, configPath)
 
   var providersTable = initTable[string, ProviderConfig]()
-  for section, table in toml.tableVal.pairs:
-    if section == "default_provider" or section == "auto_session" or table.kind != TomlValueKind.Table:
-      continue # Skip the default_provider key and other non-table sections at the root
+  var defaultProvider = "openai"
+  var autoSession = true
+  var currentSection = ""
 
-    let key = table.getOrDefault("key").getStr("")
-    let model = table.getOrDefault("model").getStr("")
+  while true:
+    let e = next(p)
+    case e.kind
+    of cfgEof:
+      break
+    of cfgSectionStart:
+      currentSection = e.section
+    of cfgKeyValuePair:
+      case currentSection
+      of "seance":
+        case e.key
+        of "default_provider":
+          defaultProvider = e.value
+        of "auto_session":
+          try:
+            autoSession = parseBool(e.value)
+          except ValueError:
+            close(p)
+            raise newException(ConfigError, "Invalid boolean value for 'auto_session' in " & configPath)
+        else:
+          discard
+      else:
+        if not providersTable.hasKey(currentSection):
+          providersTable[currentSection] = ProviderConfig(key: "", model: "")
+        case e.key
+        of "key":
+          providersTable[currentSection].key = e.value
+        of "model":
+          providersTable[currentSection].model = e.value
+        else:
+          discard
+    of cfgOption:
+      discard
+    of cfgError:
+      let errorMsg = p.errorStr(e.msg)
+      close(p)
+      raise newException(ConfigError, errorMsg)
 
-    if key.len == 0:
+  close(p)
+
+  for section, providerConfig in providersTable.pairs:
+    if providerConfig.key.len == 0:
       raise newException(ConfigError, "API key ('key') is missing for provider [" & section & "] in " & configPath)
-
-    providersTable[section] = ProviderConfig(key: key, model: model)
 
   return Config(providers: providersTable, defaultProvider: defaultProvider, autoSession: autoSession)

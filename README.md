@@ -1,4 +1,4 @@
-# Seance
+# Séance
 
 [![GitHub workflow status](https://github.com/esafak/seance/actions/workflows/release.yml/badge.svg)](https://github.com/esafak/seance/actions/workflows/release.yml)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/esafak/seance)](https://github.com/emre/seance/releases)
@@ -6,7 +6,7 @@
 
 A CLI tool and library for interacting with various Large Language Models (LLMs).
 
-Seance provides a unified interface to communicate with different providers like OpenAI, Google Gemini, and Anthropic directly from your terminal.
+Séance provides a unified interface to communicate with different providers like OpenAI, Google Gemini, and Anthropic directly from your terminal.
 
 ## Features
 
@@ -27,24 +27,28 @@ nimble install seance
 
 ### 1. Configuration
 
-Before using Seance, you need to configure your API keys. Create a configuration file at `~/.config/seance/config.toml`.
+Before using Séance, you need to configure your API keys. Create a configuration file at `~/.config/seance/config.ini`.
 
 Here is an example configuration:
 
-```toml
-# ~/.config/seance/config.toml
-default_provider = "gemini"
+```ini
+# ~/.config/seance/config.ini
+[seance]
+default_provider = gemini
+auto_session = true
 
 [openai]
-key = "sk-..."
-model = "gpt-4.1-nano-2025-04-14"
+key = sk-...
+model = gpt-4.1-nano-2025-04-14
 
 [gemini]
-key = "..."
+key = ...
 
 [anthropic]
-key = "..."
+key = ...
 ```
+
+If your configuration file becomes corrupted, Séance will detect it and offer to delete the file for you.
 
 ### 2. Usage
 
@@ -63,9 +67,9 @@ cat src/seance.nim | seance chat "Explain what this Nim code does."
 
 ### 3. Session Management
 
-Seance supports session management, allowing you to continue conversations and manage session history.
+Séance supports session management, allowing you to continue conversations and manage session history.
 
-By default, Seance will automatically create a session for each conversation. You can disable this behavior by setting `auto_session = false` in your `~/.config/seance/config.toml` file.
+By default, Séance will automatically create a session for each conversation. You can disable this behavior by setting `auto_session = false` in your `~/.config/seance/config.ini` file.
 
 - **Listing Sessions**: To see a list of all your active sessions, use the `list` command:
 
@@ -91,7 +95,7 @@ By default, Seance will automatically create a session for each conversation. Yo
 
 ## Development
 
-To contribute to Seance or run it from the source:
+To contribute to Séance or run it from the source:
 
 ```bash
 # 1. Clone the repository

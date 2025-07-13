@@ -57,6 +57,21 @@ proc chat*(prompt: seq[string], provider: string = "", model: string = "", syste
     loadConfig()
   except ConfigError as e:
     error "Configuration Error: " & e.msg
+    let configPath = getConfigPath()
+    if "invalid" in e.msg:
+      if isatty(stdin):
+        stdout.write "Your config file appears to be corrupt. Delete it? (y/N) "
+        let response = stdin.readLine().strip().toLowerAscii()
+        if response == "y":
+          try:
+            removeFile(configPath)
+            echo "Deleted " & configPath
+          except Exception as e:
+            error "Failed to delete " & configPath & ": " & e.msg
+        else:
+          echo "Corrupt config file not deleted."
+      else:
+        echo "Corrupt config file found but not deleted (not running in interactive terminal)."
     quit(1)
 
   # Determine which provider to use

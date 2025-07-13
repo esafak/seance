@@ -3,6 +3,7 @@ import os
 import times
 import seance/session
 import seance/commands
+import seance/config
 
 suite "Session Management":
   var oldSessionDir: string
@@ -11,6 +12,11 @@ suite "Session Management":
     oldSessionDir = session.sessionDir
     session.sessionDir = "./test_sessions"
     createDir(session.sessionDir)
+    let configDir = "./test_config"
+    createDir(configDir)
+    let configFile = configDir / "config.ini"
+    writeFile(configFile, "[seance]\ndefault_provider=openai\n[openai]\nkey=test")
+    setConfigPath(configFile)
 
   teardown:
     removeDir(session.sessionDir)
