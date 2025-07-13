@@ -3,12 +3,16 @@ type
   ChatMessage* = object
     role*: MessageRole
     content*: string
+    model*: string
 
   ChatResult* = object
     content*: string
     model*: string
 
   LLMProvider* = ref object of RootObj
+
+  Session* = object
+    messages*: seq[ChatMessage]
 
 method chat*(provider: LLMProvider, messages: seq[ChatMessage]): ChatResult {.base.} =
   raise newException(Defect, "chat() not implemented for this provider")

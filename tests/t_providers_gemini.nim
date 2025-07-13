@@ -3,7 +3,6 @@ import std/json
 import std/streams
 import std/httpclient
 import std/logging
-import std/strutils
 
 import seance/config
 import seance/defaults

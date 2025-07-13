@@ -15,5 +15,7 @@ dispatchMulti(
       "dryRun": "If true, prints the final prompt instead of sending it to the LLM."
     },
   ],
+  [commands.list],
+  [commands.prune, help = {"days": "The number of days to keep sessions."}],
   [commands.version],
 )

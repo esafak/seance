@@ -2,7 +2,7 @@ import common
 import ../config
 import ../defaults
 
-import std/[httpclient, json, strutils, streams]
+import std/[httpclient, strutils, streams]
 import std/logging
 
 import jsony
