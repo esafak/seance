@@ -11,7 +11,7 @@ bin           = @["seance"]
 
 # Dependencies
 
-requires "nim >= 2.0"
+# requires "nim >= 2.0"
 requires "cligen >= 1.8.6"
 requires "jsony >= 1.1.5"
 requires "parsetoml >= 0.7.1"
