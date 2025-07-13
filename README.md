@@ -93,6 +93,41 @@ By default, Séance will automatically create a session for each conversation. Y
   seance prune --days 30
   ```
 
+## Using as a Library
+
+You can also import `seance` into your Nim projects to programmatically interact with LLMs.
+
+First, add `seance` to your project's dependencies:
+
+```bash
+nimble add seance
+```
+
+Here's a basic example of how to use `seance` in your Nim code:
+
+```nim
+import seance/providers
+
+when isMainModule:
+  # Initialize a provider (e.g., OpenAI)
+  # The API key and model will be loaded from your config.ini or environment variables
+  let openaiProvider = newOpenAIProvider()
+
+  # Send a chat message
+  let response = waitFor openaiProvider.chat("Hello, how are you?")
+  echo "OpenAI Response: ", response
+
+  # Initialize a Gemini provider
+  let geminiProvider = newGeminiProvider()
+  let geminiResponse = waitFor geminiProvider.chat("Tell me a fun fact about Nim programming language.")
+  echo "Gemini Response: ", geminiResponse
+
+  # You can also specify a custom model or API key if needed
+  # let customOpenAIProvider = newOpenAIProvider(model = "gpt-3.5-turbo", apiKey = "sk-your-custom-key")
+  # let customResponse = waitFor customOpenAIProvider.chat("What's the weather like today?")
+  # echo "Custom OpenAI Response: ", customResponse
+```
+
 ## Development
 
 To contribute to Séance or run it from the source:
