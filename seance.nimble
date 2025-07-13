@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.2.0"
+version       = "0.2.1"
 author        = "Emre Şafak"
 description   = "A CLI tool and library for interacting with various LLMs"
 license       = "MIT"
@@ -14,4 +14,3 @@ bin           = @["seance"]
 requires "nim >= 2.0"
 requires "cligen >= 1.8.6"
 requires "jsony >= 1.1.5"
-requires "parsetoml >= 0.7.1"
