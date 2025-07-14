@@ -26,7 +26,7 @@ const
   DefaultMaxTokens* = 1024
 
 type
-  AnthropicProvider* = ref object of LLMProvider
+  AnthropicProvider* = ref object of ChatProvider
     conf*: ProviderConfig
     postRequestHandler: proc(url: string, body: string, headers: HttpHeaders): Response
 
@@ -44,7 +44,7 @@ proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: proc(url: s
                   postRequestHandler
   return AnthropicProvider(conf: conf, postRequestHandler: handler)
 
-method chat*(provider: AnthropicProvider, messages: seq[ChatMessage]): ChatResult =
+method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
   ## Implementation of the chat method for Anthropic.
   let requestHeaders = newHttpHeaders([
     ("x-api-key", provider.conf.key),
@@ -52,12 +52,12 @@ method chat*(provider: AnthropicProvider, messages: seq[ChatMessage]): ChatResul
     ("anthropic-version", "2023-06-01")
   ])
 
-  var model = provider.conf.model
-  if model.len == 0:
-    model = DefaultAnthropicModel
+  let modelToUse = if model.len > 0: model else: provider.conf.model
+  if modelToUse.len == 0:
+    raise newException(ValueError, "Model not specified via argument or config")
 
   let requestBody = AnthropicChatRequest(
-    model: model,
+    model: modelToUse,
     messages: messages,
     max_tokens: DefaultMaxTokens
   ).toJson()

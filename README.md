@@ -17,7 +17,7 @@ Séance provides a unified interface to communicate with different providers lik
 
 ## Installation
 
-You can install Seance using `nimble`:
+You can install Séance using `nimble`:
 
 ```bash
 nimble install seance
@@ -106,26 +106,17 @@ nimble add seance
 Here's a basic example of how to use `seance` in your Nim code:
 
 ```nim
+import seance
 import seance/providers
 
 when isMainModule:
-  # Initialize a provider (e.g., OpenAI)
-  # The API key and model will be loaded from your config.ini or environment variables
-  let openaiProvider = newOpenAIProvider()
+  var sess = newChatSession()
+  let result = sess.chat("Hello, how are you?", provider = OpenAI)
+  echo result.content
 
-  # Send a chat message
-  let response = waitFor openaiProvider.chat("Hello, how are you?")
-  echo "OpenAI Response: ", response
-
-  # Initialize a Gemini provider
-  let geminiProvider = newGeminiProvider()
-  let geminiResponse = waitFor geminiProvider.chat("Tell me a fun fact about Nim programming language.")
-  echo "Gemini Response: ", geminiResponse
-
-  # You can also specify a custom model or API key if needed
-  # let customOpenAIProvider = newOpenAIProvider(model = "gpt-3.5-turbo", apiKey = "sk-your-custom-key")
-  # let customResponse = waitFor customOpenAIProvider.chat("What's the weather like today?")
-  # echo "Custom OpenAI Response: ", customResponse
+  # You can also change the provider mid-session
+  let anotherResult = sess.chat("Translate 'hello' to French", provider = Gemini)
+  echo anotherResult.content
 ```
 
 ## Development

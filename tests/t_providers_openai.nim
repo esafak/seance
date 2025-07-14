@@ -70,7 +70,7 @@ suite "OpenAI Provider":
     # Initialize the provider with our custom mock POST request handler
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
-    let result = provider.chat(testMessages)
+    let result = provider.chat(testMessages, model = DefaultOpenaiModel)
 
     # Assertions on the captured request details
     check capturedUrl == "https://api.openai.com/v1/chat/completions"
@@ -114,7 +114,7 @@ suite "OpenAI Provider":
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
     expect IOError:
-      discard provider.chat(testMessages)
+      discard provider.chat(testMessages, model = "gpt-4")
 
   test "chat method raises ValueError on empty choices array in successful response":
     mockHttpResponse = Response(
@@ -125,4 +125,4 @@ suite "OpenAI Provider":
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
     expect ValueError:
-      discard provider.chat(testMessages)
+      discard provider.chat(testMessages, model = "gpt-4")

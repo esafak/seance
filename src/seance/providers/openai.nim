@@ -27,7 +27,7 @@ type
 const ApiUrl = "https://api.openai.com/v1/chat/completions"
 
 type
-  OpenAIProvider* = ref object of LLMProvider
+  OpenAIProvider* = ref object of ChatProvider
     conf*: ProviderConfig
     # Use a direct function to perform the POST request, enabling easier mocking
     postRequestHandler: proc(url: string, body: string, headers: HttpHeaders): Response
@@ -48,22 +48,22 @@ proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: proc(url: stri
                   postRequestHandler # Use the provided custom handler
   return OpenAIProvider(conf: conf, postRequestHandler: handler)
 
-method chat*(provider: OpenAIProvider, messages: seq[ChatMessage]): ChatResult =
+method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
   ## Implementation of the chat method for OpenAI using a live API call
   # Set authentication headers (these are still specific to the provider)
-  let requestHeaders = newHttpHeaders([ # Corrected syntax for newHttpHeaders
+  let requestHeaders = newHttpHeaders([
     ("Authorization", "Bearer " & provider.conf.key),
     ("Content-Type", "application/json")
   ])
 
-  # Determine the model to use, falling back to a default if not specified
-  var model = provider.conf.model
-  if model.len == 0:
-    model = DefaultOpenaiModel
+  # Determine the model to use
+  let modelToUse = if model.len > 0: model else: provider.conf.model
+  if modelToUse.len == 0:
+    raise newException(ValueError, "Model not specified via argument or config")
 
   # Create the request body
   let requestBody = OpenAIChatRequest(
-    model: model,
+    model: modelToUse,
     messages: messages
   ).toJson()
 
@@ -97,4 +97,4 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage]): ChatResult =
   # Return the first choice's content, including the model used
   return ChatResult(
     content: apiResponse.choices[0].message.content,
-    model: model)
+    model: modelToUse)
