@@ -32,3 +32,8 @@ proc getProvider*(provider: Provider, config: Config): ChatProvider =
   of Anthropic: return newAnthropicProvider(providerConf)
   of Gemini: return newGeminiProvider(providerConf)
   of OpenAI: return newOpenAIProvider(providerConf)
+
+proc getProvider*(provider: Provider): ChatProvider =
+  ## Convenience function that loads the default config and returns a provider.
+  let config = loadConfig()
+  return getProvider(provider, config)

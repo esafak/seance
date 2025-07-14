@@ -1,7 +1,6 @@
 import std/tables
-import os, strutils
+import os
 import unittest
-import std/parsecfg
 
 import seance/config
 
@@ -30,7 +29,8 @@ key = gem-abcdef
 # model is optional
 """
     writeFile(testConfigPath, content)
-    let config = config.loadConfig(testConfigPath)
+    setConfigPath(testConfigPath)
+    let config = config.loadConfig()
     check config.defaultProvider == "openai"
     check config.autoSession == false
     check config.providers.len == 2
@@ -40,14 +40,16 @@ key = gem-abcdef
     check config.providers["gemini"].model == ""
 
   test "raises ConfigError for missing file":
+    setConfigPath("non_existent_file.ini")
     expect ConfigError:
-      discard config.loadConfig("non_existent_file.ini")
+      discard config.loadConfig()
 
   test "raises ConfigError for missing key":
     let content = "[openai]\nmodel = gpt-4o"
     writeFile(testConfigPath, content)
+    setConfigPath(testConfigPath)
     expect ConfigError:
-      discard config.loadConfig(testConfigPath)
+      discard config.loadConfig()
 
   test "raises ConfigError for parsing error":
     let content = """
@@ -55,8 +57,9 @@ key = gem-abcdef
 key = bad-ini
 """
     writeFile(testConfigPath, content)
+    setConfigPath(testConfigPath)
     try:
-      discard config.loadConfig(testConfigPath)
+      discard config.loadConfig()
       fail()
     except ConfigError as e:
       check(e.msg.len > 0)

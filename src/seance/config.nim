@@ -13,23 +13,22 @@ type
 
   ConfigError* = object of CatchableError
 
-var configPath: string
+var customConfigPath: string
 
 proc setConfigPath*(path: string) =
-  configPath = path
+  customConfigPath = path
 
 proc getConfigPath*(): string =
-  ## Returns the standard path for the config file.
-  if configPath.len > 0:
-    return configPath
-  let home = getHomeDir()
-  let configDir = home / ".config" / "seance"
-  return configDir / "config.ini"
+  if customConfigPath.len > 0:
+    return customConfigPath
+  else:
+    return getHomeDir() / ".config" / "seance" / "config.ini"
 
-proc loadConfig*(path: string = ""): Config =
+proc loadConfig*(): Config =
   ## Loads and parses the INI config file.
+  ## It automatically finds the config file in the default location.
   ## Raises ConfigError on validation errors.
-  let configPath = if path.len > 0: path else: getConfigPath()
+  let configPath = getConfigPath()
 
   if not fileExists(configPath):
     raise newException(ConfigError, "Config file not found at: " & configPath &

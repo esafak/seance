@@ -1,5 +1,6 @@
 from seance/session import newChatSession
-export newChatSession
+from seance/providers import getProvider
+export newChatSession, getProvider
 
 # This is the main entry point for the executable.
 # It uses cligen to dispatch to the correct command implementation.
