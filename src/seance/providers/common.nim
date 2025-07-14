@@ -11,10 +11,9 @@ type
 
   ChatProvider* = ref object of RootObj
 
-  Session* = object
-    messages*: seq[ChatMessage]
+  
 
-method chat*(provider: ChatProvider, messages: seq[ChatMessage], model: string = ""): ChatResult {.base.} =
+method dispatchChat*(provider: ChatProvider, messages: seq[ChatMessage], model: string = ""): ChatResult {.base.} =
   raise newException(Defect, "chat() not implemented for this provider")
 
 proc `$`*(role: MessageRole): string =

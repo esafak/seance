@@ -90,7 +90,15 @@ By default, Séance will automatically create a session for each conversation. Y
   seance prune
 
   # Prune sessions older than 30 days
+  ```bash
   seance prune --days 30
+  ```
+
+- **Disabling Session for a Single Chat**: To prevent a session from being loaded or saved for a specific chat, use the `--no_session` flag:
+
+  ```bash
+  seance chat "This chat should not be saved." --no_session
+  ```
   ```
 
 ## Using as a Library

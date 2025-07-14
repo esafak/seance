@@ -52,7 +52,7 @@ proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
     let role = if msg.role == assistant: "model" else: "user"
     result.add(GeminiContent(role: role, parts: @[GeminiContentPart(text: msg.content)]))
 
-method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
+method dispatchChat*(provider: GeminiProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
   ## Implementation of the chat method for Gemini.
   let modelToUse = if model.len > 0: model else: provider.conf.model
   if modelToUse.len == 0:

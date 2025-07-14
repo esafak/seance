@@ -51,7 +51,7 @@ proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: proc(
                   postRequestHandler # Use the provided custom handler
   return OpenAIProvider(conf: conf, postRequestHandler: handler)
 
-method chat*(provider: OpenAIProvider, messages: seq[ChatMessage],
+method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage],
     model: string = ""): ChatResult =
   ## Implementation of the chat method for OpenAI using a live API call
   # Set authentication headers (these are still specific to the provider)

@@ -44,7 +44,7 @@ proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: proc(
                   postRequestHandler
   return AnthropicProvider(conf: conf, postRequestHandler: handler)
 
-method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
+method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
   ## Implementation of the chat method for Anthropic.
   let requestHeaders = newHttpHeaders([
     ("x-api-key", provider.conf.key),

@@ -57,7 +57,7 @@ suite "Gemini Provider":
     )
 
     let provider = newGeminiProvider(defaultConf, mockPostRequestHandler)
-    let result = provider.chat(testMessages, model = DefaultGeminiModel)
+    let result = provider.dispatchChat(testMessages, model = DefaultGeminiModel)
 
     let expectedUrl = "https://generativelanguage.googleapis.com/v1beta/models/" & DefaultGeminiModel & ":generateContent?key=" & defaultConf.key
     check capturedUrl == expectedUrl

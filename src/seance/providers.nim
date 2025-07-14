@@ -1,6 +1,6 @@
-import  tables
+import  tables, strutils
 import config
-from providers/common import ChatProvider, ChatMessage, MessageRole, ChatResult, chat
+from providers/common import ChatProvider, ChatMessage, MessageRole, ChatResult, dispatchChat
 from config import Config, ProviderConfig
 from providers/anthropic import AnthropicProvider, newAnthropicProvider
 from providers/gemini import GeminiProvider, newGeminiProvider
@@ -12,17 +12,24 @@ type
     Gemini,
     Anthropic
 
-export ChatProvider, ChatMessage, MessageRole, ChatResult, chat,
+export ChatProvider, ChatMessage, MessageRole, ChatResult, dispatchChat,
        AnthropicProvider, newAnthropicProvider,
        GeminiProvider, newGeminiProvider,
        OpenAIProvider, newOpenAIProvider,
        Provider
 
+proc parseProvider*(providerName: string): Provider =
+  case providerName.normalize():
+  of "openai": result = OpenAI
+  of "gemini": result = Gemini
+  of "anthropic": result = Anthropic
+  else: raise newException(ConfigError, "Unknown provider: " & providerName)
+
 proc getProvider*(provider: Provider, config: Config): ChatProvider =
   ## Factory function to create a provider instance from its name.
-  let providerName = $provider
+  let providerName = ($provider).normalize()
   if not config.providers.hasKey(providerName):
-    raise newException(ConfigError, "Provider not found in config: " & providerName)
+    raise newException(ConfigError, "Provider '" & providerName & "' not found in config.")
 
   let providerConf = config.providers[providerName]
   if providerConf.key.len == 0:
