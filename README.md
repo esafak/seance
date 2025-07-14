@@ -97,26 +97,43 @@ By default, Séance will automatically create a session for each conversation. Y
 
 You can also import `seance` into your Nim projects to programmatically interact with LLMs.
 
-First, add `seance` to your project's dependencies:
+### With a Configuration File
 
-```bash
-nimble add seance
-```
-
-Here's a basic example of how to use `seance` in your Nim code:
+If you have a `config.ini` file at `~/.config/seance/config.ini`, `seance` will automatically find and use it when you call `loadConfig()`.
 
 ```nim
 import seance
-import seance/providers
 
-when isMainModule:
-  var sess = newChatSession()
-  let result = sess.chat("Hello, how are you?", provider = OpenAI)
-  echo result.content
+# 1. Get a provider instance (config is loaded automatically)
+let provider = getProvider(OpenAI)
 
-  # You can also change the provider mid-session
-  let anotherResult = sess.chat("Translate 'hello' to French", provider = Gemini)
-  echo anotherResult.content
+# 2. Create a session and chat
+var sess = newChatSession()
+let result = sess.chat("What is the capital of Nimland?", provider)
+echo result.content
+```
+
+### Manual Configuration
+
+For more direct control or to avoid using a config file, you can instantiate a provider manually. This is ideal for library use where you manage keys and settings yourself.
+
+```nim
+import seance
+import seance/providers # This imports ProviderConfig and new*Provider functions
+
+# 1. Manually create a provider configuration
+let providerConf = ProviderConfig(
+  key: "your_secret_api_key",
+  model: "gpt-4o"
+)
+
+# 2. Instantiate the provider directly
+let provider = newOpenAIProvider(providerConf)
+
+# 3. Create a session and chat
+var sess = newChatSession()
+let result = sess.chat("What is the capital of Nimland?", provider)
+echo result.content
 ```
 
 ## Development

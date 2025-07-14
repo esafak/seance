@@ -1,7 +1,6 @@
 import std/json
 import std/os
 import providers
-import config
 import providers/common
 
 var sessionDir* = getHomeDir() / ".config" / "seance" / "sessions"
@@ -37,10 +36,8 @@ proc newChatSession*(): Session =
 
 import providers
 
-proc chat*(session: var Session, query: string, provider: Provider): ChatResult =
-  let config = loadConfig()
-  let chatProvider = getProvider(provider, config)
+proc chat*(session: var Session, query: string, provider: ChatProvider): ChatResult =
   session.messages.add(ChatMessage(role: user, content: query))
-  result = chatProvider.chat(session.messages)
+  result = provider.chat(session.messages)
   session.messages.add(ChatMessage(role: assistant, content: result.content, model: result.model))
   return result
