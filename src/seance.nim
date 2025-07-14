@@ -1,3 +1,6 @@
+from seance/session import newChatSession
+export newChatSession
+
 # This is the main entry point for the executable.
 # It uses cligen to dispatch to the correct command implementation.
 import cligen

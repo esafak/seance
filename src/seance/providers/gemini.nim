@@ -29,7 +29,7 @@ const
   ApiUrlBase = "https://generativelanguage.googleapis.com/v1beta/models/"
 
 type
-  GeminiProvider* = ref object of LLMProvider
+  GeminiProvider* = ref object of ChatProvider
     conf*: ProviderConfig
     postRequestHandler: proc(url: string, body: string, headers: HttpHeaders): Response
 
@@ -52,13 +52,13 @@ proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
     let role = if msg.role == assistant: "model" else: "user"
     result.add(GeminiContent(role: role, parts: @[GeminiContentPart(text: msg.content)]))
 
-method chat*(provider: GeminiProvider, messages: seq[ChatMessage]): ChatResult =
+method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
   ## Implementation of the chat method for Gemini.
-  var model = provider.conf.model
-  if model.len == 0:
-    model = DefaultGeminiModel
+  let modelToUse = if model.len > 0: model else: provider.conf.model
+  if modelToUse.len == 0:
+    raise newException(ValueError, "Model not specified via argument or config")
 
-  let apiUrl = ApiUrlBase & model & ":generateContent?key=" & provider.conf.key
+  let apiUrl = ApiUrlBase & modelToUse & ":generateContent?key=" & provider.conf.key
 
   let requestHeaders = newHttpHeaders([("Content-Type", "application/json")])
 

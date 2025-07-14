@@ -42,7 +42,7 @@ suite "Anthropic Provider":
     )
 
     let provider = newAnthropicProvider(defaultConf, mockPostRequestHandler)
-    let result = provider.chat(testMessages)
+    let result = provider.chat(testMessages, model = DefaultAnthropicModel)
 
     check capturedUrl == "https://api.anthropic.com/v1/messages"
     check capturedHeaders["x-api-key"] == defaultConf.key

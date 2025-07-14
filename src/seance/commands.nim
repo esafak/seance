@@ -11,15 +11,8 @@ import std/strutils
 import std/terminal
 import std/algorithm
 
-proc newProviderByName(name: string, conf: ProviderConfig): LLMProvider =
-  ## Factory function to create a provider instance from its name.
-  case name.toLowerAscii():
-    of "anthropic": return newAnthropicProvider(conf)
-    of "gemini": return newGeminiProvider(conf)
-    of "openai": return newOpenAIProvider(conf)
-    else: raise newException(ConfigError, "Unknown or unsupported provider: " & name)
-
-proc chat*(prompt: seq[string], provider: string = "", model: string = "", systemPrompt: string = "",
+import seance/providers
+proc chat*(prompt: seq[string], provider: Provider, model: string = "", systemPrompt: string = "",
   session: string = "", verbose: int = 0, dryRun: bool = false) =
   ## Sends a single chat prompt to the specified provider and prints the response.
   var stdinContent = ""
@@ -74,28 +67,6 @@ proc chat*(prompt: seq[string], provider: string = "", model: string = "", syste
         echo "Corrupt config file found but not deleted (not running in interactive terminal)."
     quit(1)
 
-  # Determine which provider to use
-  let actualProviderName = if provider.len > 0: provider else: config.defaultProvider
-  if actualProviderName.len == 0:
-    error "No provider specified and no default provider found in config. " &
-      "Please specify a provider or set 'default_provider' in your config file."
-    quit(1)
-
-  var providerConf: ProviderConfig
-  if not config.providers.hasKey(actualProviderName):
-    error "Provider '" & actualProviderName & "' not found in configuration."
-    quit(1)
-
-  providerConf = config.providers[actualProviderName]
-
-  # Override model if specified via CLI
-  if model.len > 0:
-    providerConf.model = model
-
-  if providerConf.key.len == 0:
-    error "API key for provider '" & actualProviderName & "' is not set in configuration."
-    quit(1)
-
   var sessionId: string
   var sessionObj: Session
   var newSessionCreated = false
@@ -114,9 +85,12 @@ proc chat*(prompt: seq[string], provider: string = "", model: string = "", syste
     sessionObj.messages.add(ChatMessage(role: system, content: systemPrompt)) # No model for system/user messages
   sessionObj.messages.add(ChatMessage(role: user, content: finalPrompt)) # No model for system/user messages
 
+  # --- Determine provider and model ---
+  let modelName = if model.len > 0: model else: "" # Let provider use its default if not specified
+
   try:
-    var llmProvider = newProviderByName(actualProviderName, providerConf)
-    let result = llmProvider.chat(sessionObj.messages)
+    let llmProvider = getProvider(provider, config)
+    let result = llmProvider.chat(sessionObj.messages, model = modelName)
     info "Using " & result.model & "\n"
     echo result.content
 
