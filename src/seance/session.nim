@@ -3,6 +3,10 @@ import std/os
 import providers
 import providers/common
 
+type
+  Session* = object
+    messages*: seq[ChatMessage]
+
 var sessionDir* = getHomeDir() / ".config" / "seance" / "sessions"
 
 proc getSessionFilePath*(sessionId: string): string =
@@ -34,10 +38,8 @@ proc saveSession*(sessionId: string, session: Session) =
 proc newChatSession*(): Session =
   return Session(messages: @[])
 
-import providers
-
-proc chat*(session: var Session, query: string, provider: ChatProvider): ChatResult =
+proc chat*(session: var Session, query: string, provider: ChatProvider, model: string = ""): ChatResult =
   session.messages.add(ChatMessage(role: user, content: query))
-  result = provider.chat(session.messages)
+  result = dispatchChat(provider, session.messages, model)
   session.messages.add(ChatMessage(role: assistant, content: result.content, model: result.model))
   return result

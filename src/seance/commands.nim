@@ -2,17 +2,16 @@ import config
 import uuid
 import providers
 import session
-from providers/common import Session
 
 import strutils, times
+import std/algorithm
 import std/logging
 import std/os
 import std/strutils
 import std/terminal
-import std/algorithm
 
-proc chat*(prompt: seq[string], provider: Provider, model: string = "", systemPrompt: string = "",
-  session: string = "", verbose: int = 0, dryRun: bool = false) =
+proc chat*(prompt: seq[string], provider: string = "", model: string = "", systemPrompt: string = "",
+  session: string = "", verbose: int = 0, dryRun: bool = false, noSession: bool = false) =
   ## Sends a single chat prompt to the specified provider and prints the response.
   var stdinContent = ""
   if not isatty(stdin):
@@ -70,7 +69,7 @@ proc chat*(prompt: seq[string], provider: Provider, model: string = "", systemPr
   var sessionObj: Session
   var newSessionCreated = false
 
-  if session.len > 0 or config.autoSession:
+  if not noSession and (session.len > 0 or config.autoSession):
     if session.len > 0:
       sessionId = session
     else:
@@ -87,13 +86,16 @@ proc chat*(prompt: seq[string], provider: Provider, model: string = "", systemPr
   # --- Determine provider and model ---
   let modelName = if model.len > 0: model else: "" # Let provider use its default if not specified
 
+  let actualProviderName = if provider.len > 0: provider else: config.defaultProvider
+  let actualProvider = parseProvider(actualProviderName)
+
   try:
-    let llmProvider = getProvider(provider, config)
-    let result = llmProvider.chat(sessionObj.messages, model = modelName)
+    let llmProvider = getProvider(actualProvider, config)
+    let result = llmProvider.dispatchChat(sessionObj.messages, model = modelName)
     info "Using " & result.model & "\n"
     echo result.content
 
-    if sessionId.len > 0:
+    if sessionId.len > 0 and not noSession:
       sessionObj.messages.add(ChatMessage(role: assistant, content: result.content, model: result.model))
       saveSession(sessionId, sessionObj)
       if newSessionCreated:

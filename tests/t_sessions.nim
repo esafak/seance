@@ -8,7 +8,7 @@ import seance/providers
 import seance/providers/common
 
 type MockProvider = ref object of ChatProvider
-method chat(provider: MockProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
+method dispatchChat(provider: MockProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
   return ChatResult(content: "bar", model: "gpt-4")
 
 suite "Session Management":
