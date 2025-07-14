@@ -4,14 +4,13 @@ import providers
 import session
 from providers/common import Session
 
-import strutils, tables, times
+import strutils, times
 import std/logging
 import std/os
 import std/strutils
 import std/terminal
 import std/algorithm
 
-import seance/providers
 proc chat*(prompt: seq[string], provider: Provider, model: string = "", systemPrompt: string = "",
   session: string = "", verbose: int = 0, dryRun: bool = false) =
   ## Sends a single chat prompt to the specified provider and prints the response.
@@ -39,9 +38,9 @@ proc chat*(prompt: seq[string], provider: Provider, model: string = "", systemPr
     quit(0)
 
   let logLevel = case verbose:
-                 of 0: lvlInfo
-                 of 1: lvlDebug
-                 else: lvlAll
+    of 0: lvlInfo
+    of 1: lvlDebug
+    else: lvlAll
 
   var logger = newConsoleLogger(levelThreshold = logLevel, useStderr = true)
   addHandler(logger)
@@ -126,7 +125,7 @@ proc list*() =
   var maxDescriptionLen = "Description".len
 
   const totalWidth = 132
-  const fixedSeparatorWidth = " | ".len * 3 # Three separators
+  const fixedSeparatorWidth = " | ".len * 3       # Three separators
   const sessionIdFixedLen = 36 # UUID length
 
   # Calculate available width for description
@@ -165,27 +164,28 @@ proc list*() =
         corruptFiles.add(sessionFile)
         # Corrupt files don't participate in column width calculation
 
-  # Sort sessionData by age (rawAge)
-  sessionData.sort(proc (a, b: tuple[sessionId: string, rawAge: Duration, formattedAge: string, model: string, description: string]): int =
+      # Sort sessionData by age (rawAge)
+  sessionData.sort(proc (a, b: tuple[sessionId: string, rawAge: Duration,
+      formattedAge: string, model: string, description: string]): int =
     result = cmp(a.rawAge, b.rawAge)
   )
 
   echo "Session ID".align(sessionIdFixedLen) & " | " &
        "Age".align(maxAgeLen) & " | " &
        # "Model".align(maxModelLen) & " | " &
-       "Description".align(maxDescriptionLen)
+    "Description".align(maxDescriptionLen)
 
   echo "-".repeat(sessionIdFixedLen) & "-+-" &
        "-".repeat(maxAgeLen) & "-+-" &
        # "-".repeat(maxModelLen) & "-+-" &
-       "-".repeat(maxDescriptionLen)
+    "-".repeat(maxDescriptionLen)
 
   for data in sessionData:
     let (sessionId, rawAge, age, model, description) = data
     echo sessionId.align(sessionIdFixedLen) & " | " &
          age.align(maxAgeLen) & " | " &
          # model.align(maxModelLen) & " | " &
-         description.align(maxDescriptionLen)
+      description.align(maxDescriptionLen)
 
   if corruptFiles.len > 0:
     echo "\nFound " & $corruptFiles.len & " corrupt session files."

@@ -1,6 +1,5 @@
 import common
 import ../config
-import ../defaults
 
 import std/[httpclient, strutils, streams]
 import std/logging
@@ -15,7 +14,7 @@ type
     model: string
     messages: seq[ChatMessage]
     # stream: bool # for later
-  
+
   OpenAIChatChoice = object
     message: ChatMessage
 
@@ -30,16 +29,20 @@ type
   OpenAIProvider* = ref object of ChatProvider
     conf*: ProviderConfig
     # Use a direct function to perform the POST request, enabling easier mocking
-    postRequestHandler: proc(url: string, body: string, headers: HttpHeaders): Response
+    postRequestHandler: proc(url: string, body: string,
+        headers: HttpHeaders): Response
 
 # Default HTTP POST request handler for production use
-proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Response =
+proc defaultHttpPostHandler(url: string, body: string,
+    headers: HttpHeaders): Response =
   let client = newHttpClient()
   defer: client.close() # Ensure the client is closed after use
   client.headers = headers # Set the headers on the client object
   result = client.post(url, body = body) # Call post without a 'headers' parameter
 
-proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: proc(url: string, body: string, headers: HttpHeaders): Response = nil): OpenAIProvider =
+proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: proc(
+    url: string, body: string,
+    headers: HttpHeaders): Response = nil): OpenAIProvider =
   ## Creates a new instance of the OpenAI provider.
   ## Optionally accepts a custom postRequestHandler for testing or custom HTTP handling.
   let handler = if postRequestHandler == nil:
@@ -48,7 +51,8 @@ proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: proc(url: stri
                   postRequestHandler # Use the provided custom handler
   return OpenAIProvider(conf: conf, postRequestHandler: handler)
 
-method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
+method chat*(provider: OpenAIProvider, messages: seq[ChatMessage],
+    model: string = ""): ChatResult =
   ## Implementation of the chat method for OpenAI using a live API call
   # Set authentication headers (these are still specific to the provider)
   let requestHeaders = newHttpHeaders([
@@ -69,14 +73,15 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: string
 
   debug "OpenAI Request Body: " & requestBody # Log the request body
   # Corrected hasKey usage for HttpHeaders
-  debug "Does requestHeaders contain Authorization BEFORE send? " & $hasKey(requestHeaders, "Authorization")
+  debug "Does requestHeaders contain Authorization BEFORE send? " & $hasKey(
+      requestHeaders, "Authorization")
 
 
   # Make the API call using the injected handler
   let response = provider.postRequestHandler(ApiUrl, requestBody, requestHeaders)
 
   # Explicitly call streams.readAll to ensure the correct overload is used
-  let responseBodyContent = streams.readAll(response.bodyStream) 
+  let responseBodyContent = streams.readAll(response.bodyStream)
 
   debug "OpenAI Response Status: " & $response.code # Log response status
   debug "OpenAI Response Body: " & responseBodyContent # Log the full response body

@@ -1,5 +1,4 @@
 import ../config
-import ../defaults
 import common
 
 import jsony
@@ -36,7 +35,8 @@ proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Re
   client.headers = headers
   result = client.post(url, body = body)
 
-proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: proc(url: string, body: string, headers: HttpHeaders): Response = nil): AnthropicProvider =
+proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: proc(
+    url: string, body: string, headers: HttpHeaders): Response = nil): AnthropicProvider =
   ## Creates a new instance of the Anthropic provider.
   let handler = if postRequestHandler == nil:
                   defaultHttpPostHandler

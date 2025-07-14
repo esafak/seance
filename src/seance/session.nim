@@ -41,6 +41,6 @@ proc chat*(session: var Session, query: string, provider: Provider): ChatResult 
   let config = loadConfig()
   let chatProvider = getProvider(provider, config)
   session.messages.add(ChatMessage(role: user, content: query))
-  let result = chatProvider.chat(session.messages)
+  result = chatProvider.chat(session.messages)
   session.messages.add(ChatMessage(role: assistant, content: result.content, model: result.model))
   return result

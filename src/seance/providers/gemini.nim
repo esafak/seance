@@ -1,5 +1,4 @@
 import ../config
-import ../defaults
 import common
 
 import std/[httpclient, strutils, streams]
@@ -39,7 +38,8 @@ proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Re
   client.headers = headers
   result = client.post(url, body = body)
 
-proc newGeminiProvider*(conf: ProviderConfig, postRequestHandler: proc(url: string, body: string, headers: HttpHeaders): Response = nil): GeminiProvider =
+proc newGeminiProvider*(conf: ProviderConfig, postRequestHandler: proc(
+    url: string, body: string, headers: HttpHeaders): Response = nil): GeminiProvider =
   ## Creates a new instance of the Gemini provider.
   let handler = if postRequestHandler == nil:
                   defaultHttpPostHandler
