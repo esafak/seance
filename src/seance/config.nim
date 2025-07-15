@@ -1,17 +1,8 @@
-import os, tables, strutils, streams
-import std/parsecfg
+from defaults import DefaultProvider
+import types
 
-type
-  ProviderConfig* = object
-    key*: string
-    model*: string
-
-  Config* = object
-    providers*: Table[string, ProviderConfig]
-    defaultProvider*: string
-    autoSession*: bool
-
-  ConfigError* = object of CatchableError
+import os, tables, streams
+import std/[logging, parsecfg, strutils]
 
 var customConfigPath: string
 
@@ -24,7 +15,7 @@ proc getConfigPath*(): string =
   else:
     return getHomeDir() / ".config" / "seance" / "config.ini"
 
-proc loadConfig*(): Config =
+proc loadConfig*(): SeanceConfig =
   ## Loads and parses the INI config file.
   ## It automatically finds the config file in the default location.
   ## Raises ConfigError on validation errors.
@@ -44,7 +35,7 @@ proc loadConfig*(): Config =
   open(p, f, configPath)
 
   var providersTable = initTable[string, ProviderConfig]()
-  var defaultProvider = "openai"
+  var defaultProvider = DefaultProvider  # Default to Gemini enum value
   var autoSession = true
   var currentSection = ""
 
@@ -60,7 +51,11 @@ proc loadConfig*(): Config =
       of "seance":
         case e.key
         of "default_provider":
-          defaultProvider = e.value
+          try:
+            defaultProvider = parseProvider(e.value)
+          except ConfigError as e:
+            close(p)
+            raise newException(ConfigError, e.msg)
         of "auto_session":
           try:
             autoSession = parseBool(e.value)
@@ -92,4 +87,5 @@ proc loadConfig*(): Config =
     if providerConfig.key.len == 0:
       raise newException(ConfigError, "API key ('key') is missing for provider [" & section & "] in " & configPath)
 
-  return Config(providers: providersTable, defaultProvider: defaultProvider, autoSession: autoSession)
+  debug "Config loaded. Default provider: " & $defaultProvider & ", auto session: " & $autoSession
+  return SeanceConfig(providers: providersTable, defaultProvider: defaultProvider, autoSession: autoSession)

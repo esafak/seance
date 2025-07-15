@@ -1,46 +1,28 @@
-import  tables, strutils
-import config
-from providers/common import ChatProvider, ChatMessage, MessageRole, ChatResult, dispatchChat
-from config import Config, ProviderConfig
-from providers/anthropic import AnthropicProvider, newAnthropicProvider
-from providers/gemini import GeminiProvider, newGeminiProvider
-from providers/openai import OpenAIProvider, newOpenAIProvider
+import config, logging, options, strutils, tables, types
 
-type
-  Provider* = enum
-    OpenAI,
-    Gemini,
-    Anthropic
+from providers/common import dispatchChat
+from providers/anthropic import newAnthropicProvider
+from providers/gemini import newGeminiProvider
+from providers/openai import newOpenAIProvider
 
-export ChatProvider, ChatMessage, MessageRole, ChatResult, dispatchChat,
-       AnthropicProvider, newAnthropicProvider,
-       GeminiProvider, newGeminiProvider,
-       OpenAIProvider, newOpenAIProvider,
-       Provider
+export ChatProvider, ChatMessage, MessageRole, ChatResult, Provider, dispatchChat
 
-proc parseProvider*(providerName: string): Provider =
-  case providerName.normalize():
-  of "openai": result = OpenAI
-  of "gemini": result = Gemini
-  of "anthropic": result = Anthropic
-  else: raise newException(ConfigError, "Unknown provider: " & providerName)
-
-proc getProvider*(provider: Provider, config: Config): ChatProvider =
-  ## Factory function to create a provider instance from its name.
-  let providerName = ($provider).normalize()
+proc getProvider*(provider: Option[Provider] = none(Provider),
+    config: SeanceConfig = loadConfig()): ChatProvider =
+  ## Instantiates a provider.
+  let usedProvider = provider.get(config.defaultProvider)
+  let providerName = ($usedProvider).normalize()
   if not config.providers.hasKey(providerName):
     raise newException(ConfigError, "Provider '" & providerName & "' not found in config.")
 
+  # Check only the config for the selected provider
   let providerConf = config.providers[providerName]
   if providerConf.key.len == 0:
     raise newException(ConfigError, "API key for provider '" & providerName & "' is not set.")
 
-  case provider
-  of Anthropic: return newAnthropicProvider(providerConf)
-  of Gemini: return newGeminiProvider(providerConf)
-  of OpenAI: return newOpenAIProvider(providerConf)
+  debug "Provider config: " & $providerConf
 
-proc getProvider*(provider: Provider): ChatProvider =
-  ## Convenience function that loads the default config and returns a provider.
-  let config = loadConfig()
-  return getProvider(provider, config)
+  case usedProvider:
+    of Anthropic: return newAnthropicProvider(providerConf)
+    of Gemini: return newGeminiProvider(providerConf)
+    of OpenAI: return newOpenAIProvider(providerConf)

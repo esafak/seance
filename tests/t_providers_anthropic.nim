@@ -4,10 +4,9 @@ import std/streams
 import std/httpclient
 import std/logging
 
-import seance/config
-import seance/providers
-import seance/providers/anthropic
 import seance/defaults
+import seance/providers/anthropic
+import seance/types
 
 var mockHttpResponse: Response
 var capturedUrl: string

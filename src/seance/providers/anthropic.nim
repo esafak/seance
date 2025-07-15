@@ -1,9 +1,8 @@
-import ../config
-import common
+import ../defaults
+import ../types
 
+import std/[httpclient, logging, strutils, streams]
 import jsony
-import std/[httpclient, strutils, streams]
-import std/logging
 
 # --- Internal types for Anthropic API ---
 type
@@ -26,8 +25,7 @@ const
 
 type
   AnthropicProvider* = ref object of ChatProvider
-    conf*: ProviderConfig
-    postRequestHandler: proc(url: string, body: string, headers: HttpHeaders): Response
+    # postRequestHandler: HttpPostHandler
 
 proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Response =
   let client = newHttpClient()
@@ -35,16 +33,12 @@ proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Re
   client.headers = headers
   result = client.post(url, body = body)
 
-proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: proc(
-    url: string, body: string, headers: HttpHeaders): Response = nil): AnthropicProvider =
+proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandler = defaultHttpPostHandler): AnthropicProvider =
   ## Creates a new instance of the Anthropic provider.
-  let handler = if postRequestHandler == nil:
-                  defaultHttpPostHandler
-                else:
-                  postRequestHandler
-  return AnthropicProvider(conf: conf, postRequestHandler: handler)
+  return AnthropicProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultAnthropicModel)
 
-method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
+method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage],
+  model: string = DefaultAnthropicModel): ChatResult =
   ## Implementation of the chat method for Anthropic.
   let requestHeaders = newHttpHeaders([
     ("x-api-key", provider.conf.key),
@@ -52,12 +46,8 @@ method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage], mo
     ("anthropic-version", "2023-06-01")
   ])
 
-  let modelToUse = if model.len > 0: model else: provider.conf.model
-  if modelToUse.len == 0:
-    raise newException(ValueError, "Model not specified via argument or config")
-
   let requestBody = AnthropicChatRequest(
-    model: modelToUse,
+    model: model,
     messages: messages,
     max_tokens: DefaultMaxTokens
   ).toJson()
@@ -83,5 +73,5 @@ method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage], mo
 
   return ChatResult(
     content: apiResponse.content[0].text,
-    model: apiResponse.model
+    model: model # apiResponse.model
   )

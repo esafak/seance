@@ -4,9 +4,8 @@ import std/streams
 import std/httpclient
 import std/logging
 
-import seance/config
 import seance/defaults
-import seance/providers
+import seance/types
 import seance/providers/gemini
 
 var mockHttpResponse: Response
