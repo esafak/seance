@@ -1,4 +1,4 @@
-name: Test and Release
+name: Test
 
 on:
   push:
@@ -18,30 +18,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Nim
         uses: jiro4989/setup-nim-action@v2
         with:
           nim-version: 'stable'
-#      - name: Install dependencies
-#        run: nimble install -d --accept
+
+      - name: Cache Nimble packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nimble
+            ~/.cache/nim
+          key: ${{ runner.os }}-nimble-${{ hashFiles('**/nimble.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-nimble-
+
+      - name: Install dependencies
+        run: nimble install -d --accept
+
       - name: Run tests
         run: nimble test
-#      - name: Draft release
-#        if: github.ref == 'refs/heads/main'
-#        uses: release-drafter/release-drafter@v5
-#        with:
-#          config-name: release-drafter.yml
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-#  release:
-#    needs: build
-#    if: startsWith(github.ref, 'refs/tags/')
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: release-drafter/release-drafter@v5
-#        with:
-#          config-name: release-drafter.yml
-#          publish: true
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
