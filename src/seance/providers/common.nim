@@ -1,19 +1,8 @@
-type
-  MessageRole* = enum system, user, assistant
-  ChatMessage* = object
-    role*: MessageRole
-    content*: string
-    model*: string
+import ../types
 
-  ChatResult* = object
-    content*: string
-    model*: string
+import std/options
 
-  ChatProvider* = ref object of RootObj
-
-  
-
-method dispatchChat*(provider: ChatProvider, messages: seq[ChatMessage], model: string = ""): ChatResult {.base.} =
+method dispatchChat*(provider: ChatProvider, messages: seq[ChatMessage], model: Option[string]): ChatResult {.base.} =
   raise newException(Defect, "chat() not implemented for this provider")
 
 proc `$`*(role: MessageRole): string =

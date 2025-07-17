@@ -1,14 +1,16 @@
-import unittest
-import os
-import times
 import seance/session
 import seance/commands
 import seance/config
 import seance/providers
 import seance/providers/common
 
+import options
+import os
+import times
+import unittest
+
 type MockProvider = ref object of ChatProvider
-method dispatchChat(provider: MockProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
+method dispatchChat(provider: MockProvider, messages: seq[ChatMessage], model: Option[string]): ChatResult =
   return ChatResult(content: "bar", model: "gpt-4")
 
 suite "Session Management":

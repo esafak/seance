@@ -2,7 +2,7 @@ import std/tables
 import os
 import unittest
 
-import seance/config
+import seance/[config, providers, types]
 
 suite "Configuration Loading":
   let testConfigDir = "temp_test_config"
@@ -31,7 +31,7 @@ key = gem-abcdef
     writeFile(testConfigPath, content)
     setConfigPath(testConfigPath)
     let config = config.loadConfig()
-    check config.defaultProvider == "openai"
+    check config.defaultProvider == OpenAI
     check config.autoSession == false
     check config.providers.len == 2
     check config.providers["openai"].key == "sk-12345"

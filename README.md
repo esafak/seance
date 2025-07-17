@@ -12,7 +12,7 @@ Séance provides a unified interface to communicate with different providers lik
 
 - **Unified CLI**: A single command to interact with multiple LLM providers.
 - **Provider Support**: Currently supports OpenAI, Google Gemini, and Anthropic.
-- **Simple Configuration**: Configure all your API keys in a single TOML file.
+- **Simple Configuration**: Configure all your API keys in a single INI file.
 - **Extensible**: Designed to be easily extendable with new providers.
 
 ## Installation
@@ -88,6 +88,7 @@ By default, Séance will automatically create a session for each conversation. Y
   ```bash
   # Prune sessions older than 10 days
   seance prune
+  ```
 
   # Prune sessions older than 30 days
   ```bash
@@ -98,7 +99,6 @@ By default, Séance will automatically create a session for each conversation. Y
 
   ```bash
   seance chat "This chat should not be saved." --no_session
-  ```
   ```
 
 ## Using as a Library

@@ -1,32 +1,40 @@
 import config
-import uuid
 import providers
 import session
+import times
+import types
+import uuid
 
-import strutils, times
 import std/algorithm
 import std/logging
+import std/options
 import std/os
 import std/strutils
 import std/terminal
 
-proc chat*(prompt: seq[string], provider: string = "", model: string = "", systemPrompt: string = "",
-  session: string = "", verbose: int = 0, dryRun: bool = false, noSession: bool = false) =
+proc chat*(
+  prompt: seq[string],
+  provider: Option[Provider] = none(Provider),
+  model: Option[string] = none(string),
+  systemPrompt: Option[string] = none(string),
+  session: Option[string] = none(string),
+  verbose: int = 0,
+  dryRun: bool = false,
+  noSession: bool = false
+) =
   ## Sends a single chat prompt to the specified provider and prints the response.
-  var stdinContent = ""
-  if not isatty(stdin):
-    stdinContent = stdin.readAll()
+  let stdinContent = if not isatty(stdin) : some(stdin.readAll()) else : none(string)
 
-  var finalPrompt: string = ""
-  if prompt.len > 0 and stdinContent.len > 0:
-    finalPrompt = prompt.join(" ") & "\n\n" & stdinContent
-  elif prompt.len > 0:
-    finalPrompt = prompt.join(" ")
-  elif stdinContent.len > 0:
-    finalPrompt = stdinContent
-  else:
-    echo "Error: No prompt provided either as an argument or via stdin."
-    quit(1)
+  let finalPrompt: string =
+    if prompt.len > 0 and stdinContent.isSome:
+      prompt.join(" ") & "\n\n" & stdinContent.get("")
+    elif prompt.len > 0:
+      prompt.join(" ")
+    elif stdinContent.isSome:
+      stdinContent.get
+    else:
+      echo "Error: No prompt provided either as an argument or via stdin."
+      quit(1)
 
   if finalPrompt.len == 0:
     echo "Error: Prompt is empty."
@@ -44,7 +52,7 @@ proc chat*(prompt: seq[string], provider: string = "", model: string = "", syste
   var logger = newConsoleLogger(levelThreshold = logLevel, useStderr = true)
   addHandler(logger)
 
-  let config = try:
+  let config: SeanceConfig = try:
     loadConfig()
   except ConfigError as e:
     error "Configuration Error: " & e.msg
@@ -69,9 +77,9 @@ proc chat*(prompt: seq[string], provider: string = "", model: string = "", syste
   var sessionObj: Session
   var newSessionCreated = false
 
-  if not noSession and (session.len > 0 or config.autoSession):
-    if session.len > 0:
-      sessionId = session
+  if not noSession and (session.isSome or config.autoSession):
+    if session.isSome:
+      sessionId = session.get
     else:
       sessionId = $uuidv7()
       newSessionCreated = true
@@ -79,20 +87,15 @@ proc chat*(prompt: seq[string], provider: string = "", model: string = "", syste
   else:
     sessionObj = Session(messages: @[])
 
-  if systemPrompt.len > 0:
-    sessionObj.messages.add(ChatMessage(role: system, content: systemPrompt)) # No model for system/user messages
+  if systemPrompt.isSome:
+    sessionObj.messages.add(ChatMessage(role: system, content: systemPrompt.get)) # No model for system/user messages
   sessionObj.messages.add(ChatMessage(role: user, content: finalPrompt)) # No model for system/user messages
 
-  # --- Determine provider and model ---
-  let modelName = if model.len > 0: model else: "" # Let provider use its default if not specified
-
-  let actualProviderName = if provider.len > 0: provider else: config.defaultProvider
-  let actualProvider = parseProvider(actualProviderName)
-
   try:
-    let llmProvider = getProvider(actualProvider, config)
-    let result = llmProvider.dispatchChat(sessionObj.messages, model = modelName)
-    info "Using " & result.model & "\n"
+    let llmProvider: ChatProvider = getProvider(provider, config)
+    let modelUsed = model.get(llmProvider.conf.model)
+    let result = llmProvider.dispatchChat(sessionObj.messages, some(modelUsed))
+    info "Using " & modelUsed & "\n"
     echo result.content
 
     if sessionId.len > 0 and not noSession:

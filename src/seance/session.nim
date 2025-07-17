@@ -1,7 +1,9 @@
-import std/json
-import std/os
 import providers
 import providers/common
+
+import std/json
+import std/options
+import std/os
 
 type
   Session* = object
@@ -38,8 +40,11 @@ proc saveSession*(sessionId: string, session: Session) =
 proc newChatSession*(): Session =
   return Session(messages: @[])
 
-proc chat*(session: var Session, query: string, provider: ChatProvider, model: string = ""): ChatResult =
+# This proc uses ChatProvider rather than Provider so we can mock it in tests
+proc chat*(session: var Session, query: string, provider: ChatProvider, model: Option[string] = none(string)): ChatResult =
   session.messages.add(ChatMessage(role: user, content: query))
-  result = dispatchChat(provider, session.messages, model)
+  let confModel = provider.conf.model
+  let usedModel = model.get(if confModel.len > 0: confModel else: provider.defaultModel)
+  result = provider.dispatchChat(session.messages, some(usedModel))
   session.messages.add(ChatMessage(role: assistant, content: result.content, model: result.model))
   return result

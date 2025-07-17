@@ -1,9 +1,7 @@
-import common
-import ../config
+import ../defaults
+import ../types
 
-import std/[httpclient, strutils, streams]
-import std/logging
-
+import std/[httpclient, logging, options, strutils, streams]
 import jsony
 
 # --- Internal types for OpenAI API ---
@@ -27,32 +25,19 @@ const ApiUrl = "https://api.openai.com/v1/chat/completions"
 
 type
   OpenAIProvider* = ref object of ChatProvider
-    conf*: ProviderConfig
-    # Use a direct function to perform the POST request, enabling easier mocking
-    postRequestHandler: proc(url: string, body: string,
-        headers: HttpHeaders): Response
 
 # Default HTTP POST request handler for production use
-proc defaultHttpPostHandler(url: string, body: string,
-    headers: HttpHeaders): Response =
+proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Response =
   let client = newHttpClient()
   defer: client.close() # Ensure the client is closed after use
   client.headers = headers # Set the headers on the client object
   result = client.post(url, body = body) # Call post without a 'headers' parameter
 
-proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: proc(
-    url: string, body: string,
-    headers: HttpHeaders): Response = nil): OpenAIProvider =
+proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandler = defaultHttpPostHandler): OpenAIProvider =
   ## Creates a new instance of the OpenAI provider.
-  ## Optionally accepts a custom postRequestHandler for testing or custom HTTP handling.
-  let handler = if postRequestHandler == nil:
-                  defaultHttpPostHandler # Use the default handler if none is provided
-                else:
-                  postRequestHandler # Use the provided custom handler
-  return OpenAIProvider(conf: conf, postRequestHandler: handler)
+  return OpenAIProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultOpenAIModel)
 
-method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage],
-    model: string = ""): ChatResult =
+method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for OpenAI using a live API call
   # Set authentication headers (these are still specific to the provider)
   let requestHeaders = newHttpHeaders([
@@ -60,22 +45,15 @@ method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage],
     ("Content-Type", "application/json")
   ])
 
-  # Determine the model to use
-  let modelToUse = if model.len > 0: model else: provider.conf.model
-  if modelToUse.len == 0:
-    raise newException(ValueError, "Model not specified via argument or config")
+  let confModel = provider.conf.model
+  let usedModel = model.get(if confModel.len > 0: confModel else: DefaultOpenAIModel)
 
-  # Create the request body
-  let requestBody = OpenAIChatRequest(
-    model: modelToUse,
-    messages: messages
-  ).toJson()
+# Create the request body
+  let requestBody = OpenAIChatRequest(model: usedModel, messages: messages).toJson()
 
   debug "OpenAI Request Body: " & requestBody # Log the request body
   # Corrected hasKey usage for HttpHeaders
-  debug "Does requestHeaders contain Authorization BEFORE send? " & $hasKey(
-      requestHeaders, "Authorization")
-
+  debug "Does requestHeaders contain Authorization BEFORE send? " & $hasKey(requestHeaders, "Authorization")
 
   # Make the API call using the injected handler
   let response = provider.postRequestHandler(ApiUrl, requestBody, requestHeaders)
@@ -94,12 +72,11 @@ method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage],
 
   # Parse the JSON response
   let apiResponse = responseBodyContent.fromJson(OpenAIChatResponse)
-  if apiResponse.choices.len == 0:
-    let errorMessage = "OpenAI response contained no choices."
-    error errorMessage # Log the error
-    raise newException(ValueError, errorMessage)
+  let content = try: apiResponse.choices[0].message.content
+    except IndexDefect:
+      let errorMessage = "OpenAI response contained no choices."
+      error errorMessage # Log the error
+      raise newException(ValueError, errorMessage)
 
   # Return the first choice's content, including the model used
-  return ChatResult(
-    content: apiResponse.choices[0].message.content,
-    model: modelToUse)
+  return ChatResult(content: content, model: usedModel)

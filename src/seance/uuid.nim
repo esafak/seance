@@ -23,10 +23,9 @@ proc `$`*(uuid: UUID): string =
   addGroup(10, 6)
 
 proc uuidv7*(): UUID =
-  let randSeq = urandom(16)
   var arr: array[16, byte]
-  for i in 0 ..< 16:
-    arr[i] = randSeq[i]
+  if not urandom(arr):
+    raise newException(IOError, "Failed to generate random bytes for UUID")
 
   let timestamp = epochTime().uint64 * 1000
   arr[0] = (timestamp shr 40).byte and 0xFF
