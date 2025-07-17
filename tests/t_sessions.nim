@@ -65,7 +65,7 @@ suite "Session Management":
 
   test "Chatting in a session":
     # 1. Create a mock ChatProvider
-    let mockProvider: Option[Provider] = MockProvider()
+    let mockProvider: Option[Provider] = some(Provider(MockProvider()))
 
     # 2. Create a session and chat
     var sess = newChatSession()

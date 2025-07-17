@@ -7,8 +7,7 @@ from providers/openai import newOpenAIProvider
 
 export ChatProvider, ChatMessage, MessageRole, ChatResult, Provider, dispatchChat
 
-proc getProvider*(provider: Option[Provider] = none(Provider),
-    config: SeanceConfig = loadConfig()): ChatProvider =
+proc getProvider*(provider: Option[Provider] = none(Provider), config: SeanceConfig = loadConfig()): ChatProvider =
   ## Instantiates a provider.
   let usedProvider = provider.get(config.defaultProvider)
   let providerName = ($usedProvider).normalize()

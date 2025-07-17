@@ -1,7 +1,9 @@
-import std/json
-import std/os
 import providers
 import providers/common
+
+import std/json
+import std/options
+import std/os
 
 type
   Session* = object
@@ -38,8 +40,8 @@ proc saveSession*(sessionId: string, session: Session) =
 proc newChatSession*(): Session =
   return Session(messages: @[])
 
-# proc chat*(session: var Session, query: string, provider: ChatProvider, model: string = ""): ChatResult =
-#   session.messages.add(ChatMessage(role: user, content: query))
-#   result = dispatchChat(provider, session.messages, model)
-#   session.messages.add(ChatMessage(role: assistant, content: result.content, model: result.model))
-#   return result
+proc chat*(session: var Session, query: string, provider: ChatProvider, model: string = ""): ChatResult =
+  session.messages.add(ChatMessage(role: user, content: query))
+  result = dispatchChat(provider, session.messages, some(model))
+  session.messages.add(ChatMessage(role: assistant, content: result.content, model: result.model))
+  return result
