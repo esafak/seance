@@ -95,7 +95,7 @@ proc chat*(
     let llmProvider: ChatProvider = getProvider(provider, config)
     let modelUsed = model.get(llmProvider.conf.model)
     let result = llmProvider.dispatchChat(sessionObj.messages, some(modelUsed))
-    info "Using " & result.model & "\n"
+    info "Using " & modelUsed & "\n"
     echo result.content
 
     if sessionId.len > 0 and not noSession:

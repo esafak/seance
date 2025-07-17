@@ -10,7 +10,7 @@ import times
 import unittest
 
 type MockProvider = ref object of ChatProvider
-method dispatchChat(provider: MockProvider, messages: seq[ChatMessage], model: string = ""): ChatResult =
+method dispatchChat(provider: MockProvider, messages: seq[ChatMessage], model: Option[string]): ChatResult =
   return ChatResult(content: "bar", model: "gpt-4")
 
 suite "Session Management":
@@ -65,7 +65,7 @@ suite "Session Management":
 
   test "Chatting in a session":
     # 1. Create a mock ChatProvider
-    let mockProvider: Option[Provider] = some(Provider(MockProvider()))
+    let mockProvider = MockProvider()
 
     # 2. Create a session and chat
     var sess = newChatSession()
