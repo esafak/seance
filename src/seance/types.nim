@@ -19,6 +19,7 @@ type
   ChatProvider* = ref object of RootObj
     conf*: ProviderConfig
     defaultModel*: string
+    # Separate out to facilitate mocking
     postRequestHandler*: HttpPostHandler
 
   Provider* = enum

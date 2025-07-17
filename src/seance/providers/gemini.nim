@@ -1,7 +1,7 @@
 import ../defaults
 import ../types
 
-import std/[httpclient, logging, strutils, streams]
+import std/[httpclient, logging, options, strutils, streams]
 import jsony
 
 # --- Internal types for Gemini API ---
@@ -27,7 +27,6 @@ const
 
 type
   GeminiProvider* = ref object of ChatProvider
-    # conf*: ProviderConfig
 
 proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Response =
   let client = newHttpClient()
@@ -44,10 +43,12 @@ proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
     let role = if msg.role == assistant: "model" else: "user"
     result.add(GeminiContent(role: role, parts: @[GeminiContentPart(text: msg.content)]))
 
-method dispatchChat*(provider: GeminiProvider, messages: seq[ChatMessage],
-  model: string = DefaultGeminiModel): ChatResult =
+method dispatchChat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for Gemini.
-  let apiUrl = ApiUrlBase & model & ":generateContent?key=" & provider.conf.key
+
+  let confModel = provider.conf.model
+  let usedModel = model.get(if confModel.len > 0: confModel else: DefaultGeminiModel)
+  let apiUrl = ApiUrlBase & usedModel & ":generateContent?key=" & provider.conf.key
 
   let requestHeaders = newHttpHeaders([("Content-Type", "application/json")])
 
@@ -75,4 +76,4 @@ method dispatchChat*(provider: GeminiProvider, messages: seq[ChatMessage],
       error errorMessage
       raise newException(ValueError, errorMessage)
 
-  return ChatResult(content: content, model: model)
+  return ChatResult(content: content, model: usedModel)

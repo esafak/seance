@@ -93,7 +93,8 @@ proc chat*(
 
   try:
     let llmProvider: ChatProvider = getProvider(provider, config)
-    let result = llmProvider.dispatchChat(sessionObj.messages, model.get(llmProvider.conf.model))
+    let modelUsed = model.get(llmProvider.conf.model)
+    let result = llmProvider.dispatchChat(sessionObj.messages, some(modelUsed))
     info "Using " & result.model & "\n"
     echo result.content
 

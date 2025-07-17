@@ -1,7 +1,7 @@
 import ../defaults
 import ../types
 
-import std/[httpclient, logging, strutils, streams]
+import std/[httpclient, logging, options, strutils, streams]
 import jsony
 
 # --- Internal types for Anthropic API ---
@@ -25,7 +25,6 @@ const
 
 type
   AnthropicProvider* = ref object of ChatProvider
-    # postRequestHandler: HttpPostHandler
 
 proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Response =
   let client = newHttpClient()
@@ -37,8 +36,7 @@ proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHan
   ## Creates a new instance of the Anthropic provider.
   return AnthropicProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultAnthropicModel)
 
-method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage],
-  model: string = DefaultAnthropicModel): ChatResult =
+method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for Anthropic.
   let requestHeaders = newHttpHeaders([
     ("x-api-key", provider.conf.key),
@@ -46,8 +44,10 @@ method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage],
     ("anthropic-version", "2023-06-01")
   ])
 
+  let confModel = provider.conf.model
+  let usedModel = model.get(if confModel.len > 0: confModel else: DefaultAnthropicModel)
   let requestBody = AnthropicChatRequest(
-    model: model,
+    model: usedModel,
     messages: messages,
     max_tokens: DefaultMaxTokens
   ).toJson()
@@ -73,5 +73,5 @@ method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage],
 
   return ChatResult(
     content: apiResponse.content[0].text,
-    model: model # apiResponse.model
+    model: usedModel # apiResponse.model
   )

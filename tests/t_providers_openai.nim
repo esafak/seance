@@ -1,5 +1,6 @@
 import unittest
 import std/json
+import std/options
 import std/streams # For newStringStream
 import std/httpclient
 import std/logging
@@ -70,7 +71,7 @@ suite "OpenAI Provider":
     # Initialize the provider with our custom mock POST request handler
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
-    let result = provider.dispatchChat(testMessages, model = DefaultOpenAIModel)
+    let result = provider.dispatchChat(testMessages, model = some(DefaultOpenAIModel))
 
     # Assertions on the captured request details
     check capturedUrl == "https://api.openai.com/v1/chat/completions"
@@ -114,7 +115,7 @@ suite "OpenAI Provider":
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
     expect IOError:
-      discard provider.dispatchChat(testMessages, model = "gpt-4")
+      discard provider.dispatchChat(testMessages, model = some("gpt-4"))
 
   test "chat method raises ValueError on empty choices array in successful response":
     mockHttpResponse = Response(
@@ -125,4 +126,4 @@ suite "OpenAI Provider":
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
     expect ValueError:
-      discard provider.dispatchChat(testMessages, model = "gpt-4")
+      discard provider.dispatchChat(testMessages, model = some("gpt-4"))

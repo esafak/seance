@@ -1,10 +1,10 @@
 import unittest
 import std/json
-import std/streams
 import std/httpclient
+import std/options
 import std/logging
+import std/streams
 
-import seance/defaults
 import seance/providers/anthropic
 import seance/types
 
@@ -41,7 +41,7 @@ suite "Anthropic Provider":
     )
 
     let provider = newAnthropicProvider(defaultConf, mockPostRequestHandler)
-    let result = provider.dispatchChat(testMessages, model = DefaultAnthropicModel)
+    let result = provider.dispatchChat(testMessages, some(mockModel))
 
     check capturedUrl == "https://api.anthropic.com/v1/messages"
     check capturedHeaders["x-api-key"] == defaultConf.key
@@ -49,7 +49,7 @@ suite "Anthropic Provider":
     check capturedHeaders["anthropic-version"] == "2023-06-01"
 
     let requestJson = parseJson(capturedRequestBody)
-    check requestJson["model"].getStr() == DefaultAnthropicModel
+    check requestJson["model"].getStr() == mockModel
     check requestJson["max_tokens"].getInt() == DefaultMaxTokens
     check requestJson["messages"][0]["role"].getStr() == "system"
     check requestJson["messages"][1]["role"].getStr() == "user"

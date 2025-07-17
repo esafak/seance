@@ -1,7 +1,7 @@
 import ../defaults
 import ../types
 
-import std/[httpclient, logging, strutils, streams]
+import std/[httpclient, logging, options, strutils, streams]
 import jsony
 
 # --- Internal types for OpenAI API ---
@@ -25,9 +25,6 @@ const ApiUrl = "https://api.openai.com/v1/chat/completions"
 
 type
   OpenAIProvider* = ref object of ChatProvider
-    # conf*: ProviderConfig
-    # Use a direct function to perform the POST request, enabling easier mocking
-    # postRequestHandler: HttpPostHandler
 
 # Default HTTP POST request handler for production use
 proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Response =
@@ -40,8 +37,7 @@ proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandle
   ## Creates a new instance of the OpenAI provider.
   return OpenAIProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultOpenAIModel)
 
-method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage],
-  model: string = DefaultOpenAIModel): ChatResult =
+method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for OpenAI using a live API call
   # Set authentication headers (these are still specific to the provider)
   let requestHeaders = newHttpHeaders([
@@ -49,8 +45,11 @@ method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage],
     ("Content-Type", "application/json")
   ])
 
-  # Create the request body
-  let requestBody = OpenAIChatRequest(model: model, messages: messages).toJson()
+  let confModel = provider.conf.model
+  let usedModel = model.get(if confModel.len > 0: confModel else: DefaultOpenAIModel)
+
+# Create the request body
+  let requestBody = OpenAIChatRequest(model: usedModel, messages: messages).toJson()
 
   debug "OpenAI Request Body: " & requestBody # Log the request body
   # Corrected hasKey usage for HttpHeaders
@@ -80,4 +79,4 @@ method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage],
       raise newException(ValueError, errorMessage)
 
   # Return the first choice's content, including the model used
-  return ChatResult(content: content, model: model)
+  return ChatResult(content: content, model: usedModel)

@@ -1,5 +1,6 @@
 import unittest
 import std/json
+import std/options
 import std/streams
 import std/httpclient
 import std/logging
@@ -56,7 +57,7 @@ suite "Gemini Provider":
     )
 
     let provider = newGeminiProvider(defaultConf, mockPostRequestHandler)
-    let result = provider.dispatchChat(testMessages, model = DefaultGeminiModel)
+    let result = provider.dispatchChat(testMessages, model = some(DefaultGeminiModel))
 
     let expectedUrl = "https://generativelanguage.googleapis.com/v1beta/models/" & DefaultGeminiModel & ":generateContent?key=" & defaultConf.key
     check capturedUrl == expectedUrl
