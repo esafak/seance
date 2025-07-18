@@ -1,13 +1,8 @@
-import unittest
-import std/json
-import std/options
-import std/streams # For newStringStream
-import std/httpclient
-import std/logging
-
 import seance/types
 import seance/defaults
 import seance/providers/openai # This imports and re-exports symbols from common.nim and openai.nim
+
+import std/[json, tables, options, streams, httpclient, logging, unittest]
 
 # --- Manual Mocking Setup for HTTP POST Request ---
 # These global variables will store the mock response and captured request details.
@@ -68,9 +63,12 @@ suite "OpenAI Provider":
       bodyStream: newStringStream("""{"choices": [{"message": {"content": "Paris, in the realm of testing!"}}]}""")
     )
 
+    const DefaultOpenAIModel = DefaultModels[OpenAI]
+
     # Initialize the provider with our custom mock POST request handler
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
+    # Call the chat method with test messages and a model
     let result = provider.chat(testMessages, model = some(DefaultOpenAIModel))
 
     # Assertions on the captured request details
