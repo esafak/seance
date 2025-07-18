@@ -71,7 +71,7 @@ suite "OpenAI Provider":
     # Initialize the provider with our custom mock POST request handler
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
-    let result = provider.dispatchChat(testMessages, model = some(DefaultOpenAIModel))
+    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel))
 
     # Assertions on the captured request details
     check capturedUrl == "https://api.openai.com/v1/chat/completions"
@@ -100,7 +100,7 @@ suite "OpenAI Provider":
       bodyStream: newStringStream("""{"choices": [{"message": {"content": "Another mocked response for custom model."}}]}""")
     )
 
-    let result = customModelProvider.dispatchChat(testMessages)
+    let result = customModelProvider.chat(testMessages)
 
     let requestJson = parseJson(capturedRequestBody) # Use the renamed variable here
     check requestJson["model"].getStr() == "my-custom-model-v1" # Verify custom model usage
@@ -115,7 +115,7 @@ suite "OpenAI Provider":
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
     expect IOError:
-      discard provider.dispatchChat(testMessages, model = some("gpt-4"))
+      discard provider.chat(testMessages, model = some("gpt-4"))
 
   test "chat method raises ValueError on empty choices array in successful response":
     mockHttpResponse = Response(
@@ -126,4 +126,4 @@ suite "OpenAI Provider":
     let provider = newOpenAIProvider(defaultConf, mockPostRequestHandler)
 
     expect ValueError:
-      discard provider.dispatchChat(testMessages, model = some("gpt-4"))
+      discard provider.chat(testMessages, model = some("gpt-4"))

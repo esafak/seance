@@ -3,7 +3,7 @@ import ../types
 import std/httpclient
 import std/options
 
-method dispatchChat*(provider: ChatProvider, messages: seq[ChatMessage], model: Option[string]): ChatResult {.base.} =
+method chat*(provider: ChatProvider, messages: seq[ChatMessage], model: Option[string]): ChatResult {.base.} =
   raise newException(Defect, "chat() not implemented for this provider")
 
 proc defaultHttpPostHandler*(url: string, body: string, headers: HttpHeaders): Response =

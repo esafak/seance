@@ -10,7 +10,7 @@ import times
 import unittest
 
 type MockProvider = ref object of ChatProvider
-method dispatchChat(provider: MockProvider, messages: seq[ChatMessage], model: Option[string]): ChatResult =
+method chat(provider: MockProvider, messages: seq[ChatMessage], model: Option[string]): ChatResult =
   return ChatResult(content: "bar", model: "gpt-4")
 
 suite "Session Management":

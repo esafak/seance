@@ -31,15 +31,14 @@ proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHan
   ## Creates a new instance of the Anthropic provider.
   return AnthropicProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultAnthropicModel)
 
-method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
+method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for Anthropic.
+  let usedModel = provider.getFinalModel(model)
   let requestHeaders = newHttpHeaders([
     ("x-api-key", provider.conf.key),
     ("Content-Type", "application/json"),
     ("anthropic-version", "2023-06-01")
   ])
-
-  let usedModel = provider.getFinalModel(model)
   let requestBody = AnthropicChatRequest(
     model: usedModel,
     messages: messages,
