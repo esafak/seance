@@ -1,3 +1,4 @@
+import common
 import ../defaults
 import ../types
 
@@ -26,12 +27,6 @@ const
 type
   AnthropicProvider* = ref object of ChatProvider
 
-proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Response =
-  let client = newHttpClient()
-  defer: client.close()
-  client.headers = headers
-  result = client.post(url, body = body)
-
 proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandler = defaultHttpPostHandler): AnthropicProvider =
   ## Creates a new instance of the Anthropic provider.
   return AnthropicProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultAnthropicModel)
@@ -44,8 +39,7 @@ method dispatchChat*(provider: AnthropicProvider, messages: seq[ChatMessage], mo
     ("anthropic-version", "2023-06-01")
   ])
 
-  let confModel = provider.conf.model
-  let usedModel = model.get(if confModel.len > 0: confModel else: DefaultAnthropicModel)
+  let usedModel = provider.getFinalModel(model)
   let requestBody = AnthropicChatRequest(
     model: usedModel,
     messages: messages,

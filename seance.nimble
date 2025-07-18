@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.3.2"
+version       = "0.3.3"
 author        = "Emre Şafak"
 description   = "A CLI tool and library for interacting with various LLMs"
 license       = "MIT"

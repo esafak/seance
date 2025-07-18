@@ -1,3 +1,4 @@
+import common
 import ../defaults
 import ../types
 
@@ -26,13 +27,6 @@ const ApiUrl = "https://api.openai.com/v1/chat/completions"
 type
   OpenAIProvider* = ref object of ChatProvider
 
-# Default HTTP POST request handler for production use
-proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Response =
-  let client = newHttpClient()
-  defer: client.close() # Ensure the client is closed after use
-  client.headers = headers # Set the headers on the client object
-  result = client.post(url, body = body) # Call post without a 'headers' parameter
-
 proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandler = defaultHttpPostHandler): OpenAIProvider =
   ## Creates a new instance of the OpenAI provider.
   return OpenAIProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultOpenAIModel)
@@ -45,8 +39,7 @@ method dispatchChat*(provider: OpenAIProvider, messages: seq[ChatMessage], model
     ("Content-Type", "application/json")
   ])
 
-  let confModel = provider.conf.model
-  let usedModel = model.get(if confModel.len > 0: confModel else: DefaultOpenAIModel)
+  let usedModel = provider.getFinalModel(model)
 
 # Create the request body
   let requestBody = OpenAIChatRequest(model: usedModel, messages: messages).toJson()

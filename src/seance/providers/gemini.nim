@@ -1,3 +1,4 @@
+import common
 import ../defaults
 import ../types
 
@@ -28,12 +29,6 @@ const
 type
   GeminiProvider* = ref object of ChatProvider
 
-proc defaultHttpPostHandler(url: string, body: string, headers: HttpHeaders): Response =
-  let client = newHttpClient()
-  defer: client.close()
-  client.headers = headers
-  result = client.post(url, body = body)
-
 proc newGeminiProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandler = defaultHttpPostHandler): GeminiProvider =
   ## Creates a new instance of the Gemini provider.
   return GeminiProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultGeminiModel)
@@ -46,8 +41,7 @@ proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
 method dispatchChat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for Gemini.
 
-  let confModel = provider.conf.model
-  let usedModel = model.get(if confModel.len > 0: confModel else: DefaultGeminiModel)
+  let usedModel = provider.getFinalModel(model)
   let apiUrl = ApiUrlBase & usedModel & ":generateContent?key=" & provider.conf.key
 
   let requestHeaders = newHttpHeaders([("Content-Type", "application/json")])
