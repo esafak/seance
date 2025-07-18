@@ -38,14 +38,11 @@ proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
     let role = if msg.role == assistant: "model" else: "user"
     result.add(GeminiContent(role: role, parts: @[GeminiContentPart(text: msg.content)]))
 
-method dispatchChat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
+method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for Gemini.
-
   let usedModel = provider.getFinalModel(model)
   let apiUrl = ApiUrlBase & usedModel & ":generateContent?key=" & provider.conf.key
-
   let requestHeaders = newHttpHeaders([("Content-Type", "application/json")])
-
   let requestBody = GeminiChatRequest(
     contents: toGeminiContents(messages)
   ).toJson()
@@ -65,9 +62,9 @@ method dispatchChat*(provider: GeminiProvider, messages: seq[ChatMessage], model
 
   let apiResponse = responseBodyContent.fromJson(GeminiChatResponse)
   let content = try: apiResponse.candidates[0].content.parts[0].text
-    except IndexDefect:
-      let errorMessage = "Gemini response was invalid."
-      error errorMessage
-      raise newException(ValueError, errorMessage)
+  except IndexDefect:
+    let errorMessage = "Gemini response was invalid."
+    error errorMessage
+    raise newException(ValueError, errorMessage)
 
   return ChatResult(content: content, model: usedModel)

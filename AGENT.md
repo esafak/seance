@@ -10,7 +10,6 @@ Séance is a Nim-based library and CLI utility. The core functionality lives in 
 - Reformat: `nimpretty`
 - Run tests: `nimble test`
 - Build for production: `nimble build`
-- Preview production build: (if applicable, see project docs)
 
 ## Code Style
 

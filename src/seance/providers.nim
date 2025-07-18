@@ -1,11 +1,11 @@
 import config, logging, options, strutils, tables, types
 
-from providers/common import dispatchChat
+from providers/common import chat
 from providers/anthropic import newAnthropicProvider
 from providers/gemini import newGeminiProvider
 from providers/openai import newOpenAIProvider
 
-export ChatProvider, ChatMessage, MessageRole, ChatResult, Provider, dispatchChat
+export ChatProvider, ChatMessage, MessageRole, ChatResult, Provider, chat
 
 proc getProvider*(provider: Option[Provider] = none(Provider), config: SeanceConfig = loadConfig()): ChatProvider =
   ## Instantiates a provider.

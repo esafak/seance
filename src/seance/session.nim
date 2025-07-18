@@ -44,6 +44,6 @@ proc newChatSession*(): Session =
 proc chat*(session: var Session, query: string, provider: ChatProvider, model: Option[string] = none(string)): ChatResult =
   session.messages.add(ChatMessage(role: user, content: query))
   let usedModel = provider.getFinalModel(model)
-  result = provider.dispatchChat(session.messages, some(usedModel))
+  result = provider.chat(session.messages, some(usedModel))
   session.messages.add(ChatMessage(role: assistant, content: result.content, model: result.model))
   return result
