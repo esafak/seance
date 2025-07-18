@@ -83,14 +83,9 @@ By default, Séance will automatically create a session for each conversation. Y
   seance chat "Tell me more about that." --session <session_id>
   ```
 
-- **Pruning Sessions**: To clean up old sessions, you can use the `prune` command. This will delete all sessions older than a specified number of days (default is 10).
+- **Pruning Sessions**: To clean up old sessions, you can use the `prune` command. 
+This will delete all sessions older than 10 days, or whatever you specify with --days:
 
-  ```bash
-  # Prune sessions older than 10 days
-  seance prune
-  ```
-
-  # Prune sessions older than 30 days
   ```bash
   seance prune --days 30
   ```

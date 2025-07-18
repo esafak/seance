@@ -12,19 +12,18 @@ Séance is a Nim-based library and CLI utility. The core functionality lives in 
 - Build for production: `nimble build`
 - Preview production build: (if applicable, see project docs)
 
-### Development Environment
-
 ## Code Style
 
-- Follow the official Nim style guide and reformat with `nimpretty`
+- Follow the official Nim style guide
 - Two spaces for indentation in .nim files
 - Use descriptive variable/function names
 - Prefer functional programming patterns where possible
 - Use docstrings for documenting public APIs, not `#` comments
+- Don't refactor code needlessly
 - 100 character line limit
 - Import local modules first, then standard library, then third-party libraries. Separate each with a blank line.
 - In CamelCase names, use "URL" (not "Url"), "API" (not "Api"), "ID" (not "Id")
-- NEVER use `{.warning[UnusedVariable]: off.}` or similar to suppress errors
+- Do not suppress errors unless instructed to
 
 ## Testing
 
@@ -35,12 +34,6 @@ Séance is a Nim-based library and CLI utility. The core functionality lives in 
 - Test files: `*.nim` in `tests/` directory
 - Mock external dependencies appropriately
 - Do not disable tests to make them pass
-
-## Architecture
-
-- Language: Nim
-- Package manager: Nimble
-- Directory structure: `src/` for core, `tests/` for tests
 
 ## Security
 
@@ -55,7 +48,7 @@ Séance is a Nim-based library and CLI utility. The core functionality lives in 
 ## Git Workflow
 
 - ALWAYS run `nim check src/` before committing
-- Fix linting errors before commit
+- Fix linting errors with `nimpretty` before committing
 - Run `nimble build` to verify typecheck passes
 - NEVER use `git push --force` on the main branch
 - Use `git push --force-with-lease` for feature branches if needed
@@ -72,14 +65,13 @@ All configuration keys use consistent naming and MUST be documented.
 
 ## Installation
 
-The project uses Nim. Use GrabNim to install it, and the Nimble package manager:
+Use GrabNim to install nim and nimble, paying attention to its output for instructions on setting the $PATH:
 
 ```bash
-wget https://codeberg.org/janAkali/grabnim/raw/branch/master/misc/install.sh
-sh install.sh
+wget -q0 - https://codeberg.org/janAkali/grabnim/raw/branch/master/misc/install.sh | sh 
 ```
 
-Place the GrabNim path after your Nimble path in your PATH environment variable. This ensures that Nimble-installed packages take precedence over the versions bundled with the Nim compiler.
+It might be something like this:
 
 ```bash
 export PATH="$HOME/.local/share/grabnim/current/bin:$PATH"
@@ -97,10 +89,6 @@ export PATH="$HOME/.nimble/bin:$PATH"
 - `grabnim list`                List local installed versions
 - `grabnim ver|version`         Print grabnim version
 - `grabnim help`                Display this help message
-
-#### Windows only
-
-- `grabnim setup`               Download extra DLLs, install MinGW C compiler and setup PATH
 
 #### Examples
 
