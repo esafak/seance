@@ -1,9 +1,5 @@
 import unittest
-import std/json
-import std/options
-import std/streams
-import std/httpclient
-import std/logging
+import std/[httpclient, json, options, streams, logging, tables]
 
 import seance/defaults
 import seance/types
@@ -56,6 +52,7 @@ suite "Gemini Provider":
       bodyStream: newStringStream(responseJson)
     )
 
+    const DefaultGeminiModel = DefaultModels[Gemini]
     let provider = newGeminiProvider(defaultConf, mockPostRequestHandler)
     let result = provider.chat(testMessages, model = some(DefaultGeminiModel))
 

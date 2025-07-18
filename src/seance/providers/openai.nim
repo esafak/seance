@@ -2,7 +2,7 @@ import common
 import ../defaults
 import ../types
 
-import std/[httpclient, logging, options, strutils, streams]
+import std/[httpclient, logging, options, strutils, streams, tables]
 import jsony
 
 # --- Internal types for OpenAI API ---
@@ -29,7 +29,7 @@ type
 
 proc newOpenAIProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandler = defaultHttpPostHandler): OpenAIProvider =
   ## Creates a new instance of the OpenAI provider.
-  return OpenAIProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultOpenAIModel)
+  return OpenAIProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultModels[OpenAI])
 
 method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for OpenAI using a live API call
