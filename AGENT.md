@@ -67,10 +67,10 @@ All configuration keys use consistent naming and MUST be documented.
 Use GrabNim to install nim and nimble, paying attention to its output for instructions on setting the $PATH:
 
 ```bash
-wget -q0 - https://codeberg.org/janAkali/grabnim/raw/branch/master/misc/install.sh | sh 
+wget -q https://codeberg.org/janAkali/grabnim/raw/branch/master/misc/install.sh | sh 
 ```
 
-It might be something like this:
+Delete this file after configuring the PATH. It might be something like this:
 
 ```bash
 export PATH="$HOME/.local/share/grabnim/current/bin:$PATH"
