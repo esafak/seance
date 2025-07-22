@@ -236,22 +236,3 @@ proc prune*(days: int = 10) =
     echo "No sessions to prune."
   else:
     echo "Pruned " & $prunedCount & " sessions."
-
-proc version*() =
-  ## Displays the current version of the LLM Client.
-  let nimbleFilePath = "seance.nimble" # Path to your nimble file
-
-  if fileExists(nimbleFilePath):
-    for line in lines(nimbleFilePath):
-      if line.startsWith("version"):
-        # Extract the version string, e.g., "0.1.0"
-        let parts = line.split("=")
-        if parts.len == 2:
-          let rawVersion = parts[1].strip()
-          # Remove quotes if present
-          let cleanVersion = rawVersion.replace("\"", "").replace("'", "")
-          echo cleanVersion
-          return
-    echo "LLM Client Version: (not found in .nimble file)"
-  else:
-    echo "LLM Client Version: (seance.nimble file not found)"

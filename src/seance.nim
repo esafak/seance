@@ -2,7 +2,7 @@ import seance/commands # Import the module containing our command procedures
 from seance/session import newChatSession
 from seance/providers import getProvider
 
-import std/options
+import std/[options, os]
 import cligen
 from cligen/argcvt import ArgcvtParams, argKeys
 
@@ -23,7 +23,12 @@ proc argHelp[T](dfl: Option[T], a: var ArgcvtParams): seq[string] =
 when isMainModule:
   # This is the main entry point for the executable.
   # It uses cligen to dispatch to the correct command implementation.
-  dispatchMulti(
+  const nimbleFile = staticRead(currentSourcePath().parentDir().parentDir() / "seance.nimble")
+  # clCfg.author = nimbleFile.fromNimble("author")
+  clCfg.version = nimbleFile.fromNimble("version")
+  const description = nimbleFile.fromNimble("description")
+
+  dispatchMulti(["multi", doc = "Séance: " & description & "\n\n\n"],
     [
       commands.chat,
       help = {
@@ -39,5 +44,4 @@ when isMainModule:
     ],
     [commands.list],
     [commands.prune, help = {"days": "The number of days to keep sessions."}],
-    [commands.version],
   )
