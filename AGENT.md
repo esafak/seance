@@ -4,7 +4,8 @@ Séance is a Nim-based library and CLI utility. The core functionality lives in 
 
 ## Build & Commands
 
-- Install Nim: `grabnim` (see Installation below)
+- Install Nim: `curl https://nim-lang.org/choosenim/init.sh -sSf | sh -s -- -y`
+- Add it to your path: `export PATH=/home/jules/.nimble/bin:$PATH`
 - Install dependencies: `nimble install -d --accept`
 - Typecheck and lint: `nim check src/`
 - Reformat: `nimpretty`
@@ -61,47 +62,3 @@ When adding new configuration options, update all relevant places:
 3. Documentation in README.md
 
 All configuration keys use consistent naming and MUST be documented.
-
-## Installation
-
-Use GrabNim to install nim and nimble, paying attention to its output for instructions on setting the $PATH:
-
-```bash
-wget -q https://codeberg.org/janAkali/grabnim/raw/branch/master/misc/install.sh | sh 
-```
-
-Delete this file after configuring the PATH. It might be something like this:
-
-```bash
-export PATH="$HOME/.local/share/grabnim/current/bin:$PATH"
-export PATH="$HOME/.nimble/bin:$PATH"
-```
-
-### GrabNim Usage
-
-- `grabnim`                     Install and switch to latest stable version
-- `grabnim <version>`           Install and switch to specific version
-- `grabnim compile <ver>`       Clone Nim repo, compile, install and switch
-- `grabnim upd|update <ver>`    Force update installed compiler ('devel'/'2.2.x')
-- `grabnim del|delete <ver>`    Delete local version of compiler
-- `grabnim fetch`               List remote available versions
-- `grabnim list`                List local installed versions
-- `grabnim ver|version`         Print grabnim version
-- `grabnim help`                Display this help message
-
-#### Examples
-
-- `grabnim 2.2.4`             Install Nim v2.2.4 from official website
-- `grabnim devel`             Install Nightly Nim devel from github
-- `grabnim 2.2.x`             Install Nightly Nim latest-2-2 from github
-- `grabnim compile devel`     Clone Nim repo and build master branch
-- `grabnim compile 2.0.8`     Clone repo, switch to 'v2.0.8' tag and build
-- `grabnim update devel`      Reset installed repo, pull and build
-- `grabnim update 2.2.x`      Delete and reinstall latest-2-2 from github
-
-### Paths Used by GrabNim
-
-- Cache Directory: `$XDG_CACHE_HOME/grabnim-cache` or `~/.cache/grabnim-cache` if XDG_CACHE_HOME is not set
-- Grabnim Directory: `$XDG_DATA_HOME/grabnim` or `~/.local/share/grabnim` if XDG_DATA_HOME is not set
-
-Each version lives in its own subfolder (e.g., nim-2.0.0, nim-devel).
