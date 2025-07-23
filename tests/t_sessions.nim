@@ -15,19 +15,20 @@ method chat(provider: MockProvider, messages: seq[ChatMessage], model: Option[st
 
 suite "Session Management":
   var oldSessionDir: string
+  let configDir = "./test_config"
+  let configFile = configDir / "config.ini"
 
   setup:
     oldSessionDir = session.sessionDir
     session.sessionDir = "./test_sessions"
     createDir(session.sessionDir)
-    let configDir = "./test_config"
     createDir(configDir)
-    let configFile = configDir / "config.ini"
     writeFile(configFile, "[seance]\ndefault_provider=openai\n[openai]\nkey=test\nmodel=gpt-4")
     setConfigPath(configFile)
 
   teardown:
     removeDir(session.sessionDir)
+    removeFile(configFile)
     session.sessionDir = oldSessionDir
 
   test "Prune old sessions":

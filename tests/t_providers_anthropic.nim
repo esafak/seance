@@ -5,8 +5,9 @@ import std/options
 import std/logging
 import std/streams
 
-import seance/providers/anthropic
+import seance/providers
 import seance/types
+from seance/providers/anthropic import DefaultMaxTokens
 
 var mockHttpResponse: Response
 var capturedUrl: string
@@ -40,7 +41,8 @@ suite "Anthropic Provider":
       bodyStream: newStringStream("""{"content": [{"type": "text", "text": "Test City, in the realm of Anthropic testing!"}], "model": """" & mockModel & """"}""")
     )
 
-    let provider = newAnthropicProvider(defaultConf, mockPostRequestHandler)
+    let provider = newProvider(some(Anthropic), some(defaultConf))
+    provider.postRequestHandler = mockPostRequestHandler
     let result = provider.chat(testMessages, some(mockModel))
 
     check capturedUrl == "https://api.anthropic.com/v1/messages"

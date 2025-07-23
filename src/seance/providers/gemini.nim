@@ -1,8 +1,7 @@
 import common
-import ../defaults
 import ../types
 
-import std/[httpclient, logging, options, strutils, streams, tables]
+import std/[httpclient, logging, options, strutils, streams]
 import jsony
 
 # --- Internal types for Gemini API ---
@@ -28,10 +27,6 @@ const
 
 type
   GeminiProvider* = ref object of ChatProvider
-
-proc newGeminiProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandler = defaultHttpPostHandler): GeminiProvider =
-  ## Creates a new instance of the Gemini provider.
-  return GeminiProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultModels[Gemini])
 
 proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
   for msg in messages:

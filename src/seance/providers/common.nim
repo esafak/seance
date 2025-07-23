@@ -25,6 +25,6 @@ proc getFinalModel*(provider: ChatProvider, model: Option[string] = none(string)
 
 proc `$`*(role: MessageRole): string =
   case role:
-  of system: "system"
-  of user: "user"
-  of assistant: "assistant"
+  of MessageRole.system: "system"
+  of MessageRole.user: "user"
+  of MessageRole.assistant: "assistant"

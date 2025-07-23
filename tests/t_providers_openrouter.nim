@@ -28,8 +28,8 @@ proc mockPostRequestHandler(url: string, requestBodyStr: string, headers: HttpHe
 
 # --- Test Suites ---
 
-suite "OpenAI Provider":
-  # Common setup for OpenAI provider tests
+suite "OpenRouter Provider":
+  # Common setup for OpenRouter provider tests
   let defaultConf: ProviderConfig = ProviderConfig(key: "test-key", model: "")
 
   let testMessages = @[
@@ -63,23 +63,25 @@ suite "OpenAI Provider":
       bodyStream: newStringStream("""{"choices": [{"message": {"content": "Paris, in the realm of testing!"}}]}""")
     )
 
-    const DefaultOpenAIModel = DefaultModels[OpenAI]
+    const DefaultOpenRouterModel = DefaultModels[OpenRouter]
 
     # Initialize the provider with our custom mock POST request handler
-    let provider = newProvider(some(OpenAI), some(defaultConf))
+    let provider = newProvider(some(OpenRouter), some(defaultConf))
     provider.postRequestHandler = mockPostRequestHandler
 
     # Call the chat method with test messages and a model
-    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel))
+    let result = provider.chat(testMessages, model = some(DefaultOpenRouterModel))
 
     # Assertions on the captured request details
-    check capturedUrl == "https://api.openai.com/v1/chat/completions"
+    check capturedUrl == "https://openrouter.ai/api/v1/chat/completions"
 
     check capturedHeaders["Authorization"] == "Bearer " & defaultConf.key
     check capturedHeaders["Content-Type"] == "application/json"
+    check capturedHeaders["HTTP-Referer"] == "https://github.com/dmadisetti/seance"
+    check capturedHeaders["X-Title"] == "Seance"
 
     let requestJson = parseJson(capturedRequestBody) # Use the renamed variable here
-    check requestJson["model"].getStr() == DefaultOpenAIModel # Verify default model usage
+    check requestJson["model"].getStr() == DefaultOpenRouterModel # Verify default model usage
     check requestJson["messages"][0]["role"].getStr() == "system"
     check requestJson["messages"][0]["content"].getStr() == "You are a test assistant."
     check requestJson["messages"][1]["role"].getStr() == "user"
@@ -87,12 +89,12 @@ suite "OpenAI Provider":
 
     # Assertions on the returned ChatResult
     check result.content == "Paris, in the realm of testing!"
-    check result.model == DefaultOpenAIModel
+    check result.model == DefaultOpenRouterModel
 
   test "chat method uses specified model if provided in config":
     let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: "my-custom-model-v1")
     # Initialize the provider with our custom mock POST request handler
-    let customModelProvider = newProvider(some(OpenAI), some(customModelConf))
+    let customModelProvider = newProvider(some(OpenRouter), some(customModelConf))
     customModelProvider.postRequestHandler = mockPostRequestHandler
 
     mockHttpResponse = Response(
@@ -112,7 +114,7 @@ suite "OpenAI Provider":
       bodyStream: newStringStream("""{"error": {"message": "Incorrect API key provided: sk-xxxx...."}}""")
     )
     # Initialize the provider with our custom mock POST request handler
-    let provider = newProvider(some(OpenAI), some(defaultConf))
+    let provider = newProvider(some(OpenRouter), some(defaultConf))
     provider.postRequestHandler = mockPostRequestHandler
 
     expect IOError:
@@ -124,7 +126,7 @@ suite "OpenAI Provider":
       bodyStream: newStringStream("""{"choices": []}""") # Empty choices array
     )
     # Initialize the provider with our custom mock POST request handler
-    let provider = newProvider(some(OpenAI), some(defaultConf))
+    let provider = newProvider(some(OpenRouter), some(defaultConf))
     provider.postRequestHandler = mockPostRequestHandler
 
     expect ValueError:

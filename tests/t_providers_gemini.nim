@@ -3,7 +3,7 @@ import std/[httpclient, json, options, streams, logging, tables]
 
 import seance/defaults
 import seance/types
-import seance/providers/gemini
+import seance/providers
 
 var mockHttpResponse: Response
 var capturedUrl: string
@@ -53,7 +53,8 @@ suite "Gemini Provider":
     )
 
     const DefaultGeminiModel = DefaultModels[Gemini]
-    let provider = newGeminiProvider(defaultConf, mockPostRequestHandler)
+    let provider = newProvider(some(Gemini), some(defaultConf))
+    provider.postRequestHandler = mockPostRequestHandler
     let result = provider.chat(testMessages, model = some(DefaultGeminiModel))
 
     let expectedUrl = "https://generativelanguage.googleapis.com/v1beta/models/" & DefaultGeminiModel & ":generateContent?key=" & defaultConf.key

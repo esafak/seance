@@ -11,7 +11,7 @@ Séance provides a unified interface to communicate with different providers lik
 ## Features
 
 - **Unified CLI**: A single command to interact with multiple LLM providers.
-- **Provider Support**: Currently supports OpenAI, Google Gemini, and Anthropic.
+- **Provider Support**: Currently supports OpenAI, Google Gemini, Anthropic, and OpenRouter.
 - **Simple Configuration**: Configure all your API keys in a single INI file.
 - **Extensible**: Designed to be easily extendable with new providers.
 
@@ -45,6 +45,9 @@ model = gpt-4.1-nano-2025-04-14
 key = ...
 
 [anthropic]
+key = ...
+
+[openrouter]
 key = ...
 ```
 
@@ -98,46 +101,87 @@ This will delete all sessions older than 10 days, or whatever you specify with -
 
 ## Using as a Library
 
-You can also import `seance` into your Nim projects to programmatically interact with LLMs.
+Séance provides a clean, simple API for interacting with LLMs programmatically.
 
-### With a Configuration File
+### Basic Usage
 
-If you have a `config.ini` file at `~/.config/seance/config.ini`, `seance` will automatically find and use it when you call `loadConfig()`.
+Just import `seance` and start chatting:
+
+```nim
+import seance
+
+# Basic chat with default provider
+let response = chat("What is 2 + 2?")
+echo response  # "4"
+
+# Conversation context is maintained automatically
+let response1 = chat("My name is Alice")
+let response2 = chat("What's my name?")  # Remembers "Alice"
+
+# Specify provider and model
+let response3 = chat("Tell me a joke", some(OpenAI), some("gpt-4o"))
+echo response3
+
+# Add a system prompt
+let response4 = chat("Explain recursion", systemPrompt = some("You are a helpful coding assistant"))
+echo response4
+```
+
+### Session Management
+
+Control conversation context with explicit sessions:
 
 ```nim
 import seance
 
-# 1. Get a provider instance (config is loaded automatically)
-let provider = getProvider(OpenAI)
+# Create sessions with system prompts
+var workSession = newSession(some("You are a helpful coding assistant"))
+var personalSession = newSession(some("You are a friendly personal assistant"))
 
-# 2. Create a session and chat
-var sess = newChatSession()
-let result = sess.chat("What is the capital of Nimland?", provider)
-echo result.content
+# Work conversation - much more intuitive!
+let workResponse1 = workSession.chat("How do I optimize SQL queries?", some(OpenAI))
+let workResponse2 = workSession.chat("What about indexing?")  # Continues work context
+
+# Personal conversation (separate context)
+let personalResponse = personalSession.chat("What's a good pasta recipe?", some(Anthropic))
+
+# Reset global session
+resetSession(some("You are now a creative writing assistant"))
+let response = chat("Write a short story about a robot")
 ```
 
-### Manual Configuration
+### All Parameters
 
-For more direct control or to avoid using a config file, you can instantiate a provider manually. This is ideal for library use where you manage keys and settings yourself.
+The `chat` functions support these optional parameters:
 
 ```nim
-import seance
-import seance/providers # This imports ProviderConfig and new*Provider functions
+# Global session chat
+proc chat*(content: string, 
+          provider: Option[Provider] = none(Provider),     # OpenAI, Anthropic, Gemini, OpenRouter
+          model: Option[string] = none(string),            # Override model from config
+          systemPrompt: Option[string] = none(string)      # Set system prompt
+         ): string
 
-# 1. Manually create a provider configuration
-let providerConf = ProviderConfig(
-  key: "your_secret_api_key",
-  model: "gpt-4o"
-)
-
-# 2. Instantiate the provider directly
-let provider = newOpenAIProvider(providerConf)
-
-# 3. Create a session and chat
-var sess = newChatSession()
-let result = sess.chat("What is the capital of Nimland?", provider)
-echo result.content
+# Session-specific chat  
+proc chat*(session: var Session,
+          content: string,
+          provider: Option[Provider] = none(Provider), 
+          model: Option[string] = none(string),
+          systemPrompt: Option[string] = none(string)      # Only used if session is empty
+         ): string
 ```
+
+Both approaches work:
+```nim
+# Global session
+let response = chat("Hello!")
+
+# Explicit session (more intuitive)
+var session = newSession()
+let response = session.chat("Hello!")
+```
+
+That's it! No complex message arrays, no role management, just simple text in and text out with automatic conversation handling.
 
 ## Development
 

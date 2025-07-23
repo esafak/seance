@@ -9,7 +9,8 @@ const
   DefaultModels* : Table[Provider, string] = {
     OpenAI: "gpt-4.1-nano-2025-04-14",
     Anthropic: "claude-3-5-haiku-20241022",
-    Gemini: "gemini-2.5-flash-lite-preview-06-17"
+    Gemini: "gemini-2.5-flash-lite-preview-06-17",
+    OpenRouter: "qwen/qwen3-coder"
   }.toTable
 
 # let DefaultModel* = DefaultModels[DefaultProvider]
