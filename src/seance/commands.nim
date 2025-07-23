@@ -1,5 +1,6 @@
 import config
 import providers
+from providers/common import getFinalModel
 import session
 import times
 import types
@@ -96,8 +97,8 @@ proc chat*(
   sessionObj.messages.add(ChatMessage(role: user, content: finalPrompt)) # No model for system/user messages
 
   try:
-    let llmProvider: ChatProvider = getProvider(provider, config)
-    let modelUsed = model.get(llmProvider.conf.model)
+    let llmProvider: ChatProvider = newProvider(provider, none(ProviderConfig))
+    let modelUsed = llmProvider.getFinalModel(model)
     let result = llmProvider.chat(sessionObj.messages, some(modelUsed))
     info "Using " & modelUsed & "\n"
     echo result.content

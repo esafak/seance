@@ -1,6 +1,6 @@
 import seance/types
 import seance/defaults
-import seance/providers/openrouter # This imports and re-exports symbols from common.nim and openrouter.nim
+import seance/providers
 
 import std/[json, tables, options, streams, httpclient, logging, unittest]
 
@@ -66,7 +66,8 @@ suite "OpenRouter Provider":
     const DefaultOpenRouterModel = DefaultModels[OpenRouter]
 
     # Initialize the provider with our custom mock POST request handler
-    let provider = newOpenRouterProvider(defaultConf, mockPostRequestHandler)
+    let provider = newProvider(some(OpenRouter), some(defaultConf))
+    provider.postRequestHandler = mockPostRequestHandler
 
     # Call the chat method with test messages and a model
     let result = provider.chat(testMessages, model = some(DefaultOpenRouterModel))
@@ -93,14 +94,15 @@ suite "OpenRouter Provider":
   test "chat method uses specified model if provided in config":
     let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: "my-custom-model-v1")
     # Initialize the provider with our custom mock POST request handler
-    let customModelProvider = newOpenRouterProvider(customModelConf, mockPostRequestHandler)
+    let customModelProvider = newProvider(some(OpenRouter), some(customModelConf))
+    customModelProvider.postRequestHandler = mockPostRequestHandler
 
     mockHttpResponse = Response(
       status: "200 OK", # Use status: string
       bodyStream: newStringStream("""{"choices": [{"message": {"content": "Another mocked response for custom model."}}]}""")
     )
 
-    let result = customModelProvider.chat(testMessages)
+    let result = customModelProvider.chat(testMessages, model=none(string))
 
     let requestJson = parseJson(capturedRequestBody) # Use the renamed variable here
     check requestJson["model"].getStr() == "my-custom-model-v1" # Verify custom model usage
@@ -112,7 +114,8 @@ suite "OpenRouter Provider":
       bodyStream: newStringStream("""{"error": {"message": "Incorrect API key provided: sk-xxxx...."}}""")
     )
     # Initialize the provider with our custom mock POST request handler
-    let provider = newOpenRouterProvider(defaultConf, mockPostRequestHandler)
+    let provider = newProvider(some(OpenRouter), some(defaultConf))
+    provider.postRequestHandler = mockPostRequestHandler
 
     expect IOError:
       discard provider.chat(testMessages, model = some("gpt-4"))
@@ -123,7 +126,8 @@ suite "OpenRouter Provider":
       bodyStream: newStringStream("""{"choices": []}""") # Empty choices array
     )
     # Initialize the provider with our custom mock POST request handler
-    let provider = newOpenRouterProvider(defaultConf, mockPostRequestHandler)
+    let provider = newProvider(some(OpenRouter), some(defaultConf))
+    provider.postRequestHandler = mockPostRequestHandler
 
     expect ValueError:
       discard provider.chat(testMessages, model = some("gpt-4"))

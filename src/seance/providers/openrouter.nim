@@ -1,8 +1,7 @@
 import common
-import ../defaults
 import ../types
 
-import std/[httpclient, logging, options, streams, tables]
+import std/[httpclient, logging, options, streams]
 import jsony
 
 # --- Internal types for OpenRouter API ---
@@ -28,10 +27,6 @@ const
 
 type
   OpenRouterProvider* = ref object of ChatProvider
-
-proc newOpenRouterProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandler = defaultHttpPostHandler): OpenRouterProvider =
-  ## Creates a new instance of the OpenRouter provider.
-  return OpenRouterProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultModels[OpenRouter])
 
 method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for OpenRouter using a live API call

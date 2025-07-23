@@ -1,12 +1,12 @@
 import seance/commands # Import the module containing our command procedures
-from seance/session import newChatSession
-from seance/providers import getProvider
+from seance/simple import chat, newSession, resetSession, Session
+from seance/types import Provider
 
 import std/[options, os]
 import cligen
 from cligen/argcvt import ArgcvtParams, argKeys
 
-export newChatSession, getProvider
+export chat, newSession, resetSession, Session, Provider
 
 # --- Support Option[T] arguments for cligen (for dispatchMulti) ---
 proc argParse[T](dst: var Option[T], dfl: Option[T],

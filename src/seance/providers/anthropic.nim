@@ -1,8 +1,7 @@
 import common
-import ../defaults
 import ../types
 
-import std/[httpclient, logging, options, strutils, streams, tables]
+import std/[httpclient, logging, options, strutils, streams]
 import jsony
 
 # --- Internal types for Anthropic API ---
@@ -26,10 +25,6 @@ const
 
 type
   AnthropicProvider* = ref object of ChatProvider
-
-proc newAnthropicProvider*(conf: ProviderConfig, postRequestHandler: HttpPostHandler = defaultHttpPostHandler): AnthropicProvider =
-  ## Creates a new instance of the Anthropic provider.
-  return AnthropicProvider(conf: conf, postRequestHandler: postRequestHandler, defaultModel: DefaultModels[Anthropic])
 
 method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
   ## Implementation of the chat method for Anthropic.
