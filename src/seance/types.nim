@@ -25,7 +25,8 @@ type
   Provider* = enum
     Anthropic,
     Gemini,
-    OpenAI
+    OpenAI,
+    OpenRouter
 
   ProviderConfig* = object
     key*: string
@@ -43,5 +44,6 @@ proc parseProvider*(providerName: string): Provider =
   of "openai": result = OpenAI
   of "gemini": result = Gemini
   of "anthropic": result = Anthropic
+  of "openrouter": result = OpenRouter
   else: raise newException(ConfigError, "Unknown provider: " & providerName)
 

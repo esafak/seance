@@ -4,6 +4,7 @@ from providers/common import chat
 from providers/anthropic import newAnthropicProvider
 from providers/gemini import newGeminiProvider
 from providers/openai import newOpenAIProvider
+from providers/openrouter import newOpenRouterProvider
 
 export ChatProvider, ChatMessage, MessageRole, ChatResult, Provider, chat
 
@@ -25,3 +26,4 @@ proc getProvider*(provider: Option[Provider] = none(Provider), config: SeanceCon
     of Anthropic: return newAnthropicProvider(providerConf)
     of Gemini: return newGeminiProvider(providerConf)
     of OpenAI: return newOpenAIProvider(providerConf)
+    of OpenRouter: return newOpenRouterProvider(providerConf)
