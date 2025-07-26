@@ -2,8 +2,9 @@ import ../types
 
 import std/httpclient
 import std/options
+import std/json
 
-method chat*(provider: ChatProvider, messages: seq[ChatMessage], model: Option[string], jsonMode: bool): ChatResult {.base.} =
+method chat*(provider: ChatProvider, messages: seq[ChatMessage], model: Option[string], jsonMode: bool, schema: Option[JsonNode]): ChatResult {.base.} =
   raise newException(Defect, "chat() not implemented for this provider")
 
 proc defaultHttpPostHandler*(url: string, body: string, headers: HttpHeaders): Response =

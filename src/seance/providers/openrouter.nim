@@ -15,7 +15,7 @@ const
 
 # --- Provider Implementation ---
 
-method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false): ChatResult =
+method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false, schema: Option[JsonNode] = none(JsonNode)): ChatResult =
   ## Implementation of the chat method for OpenRouter using a live API call
   let usedModel = provider.getFinalModel(model)
   let requestHeaders = newHttpHeaders([

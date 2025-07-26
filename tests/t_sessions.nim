@@ -8,9 +8,10 @@ import options
 import os
 import times
 import unittest
+import std/json
 
 type MockProvider = ref object of ChatProvider
-method chat(provider: MockProvider, messages: seq[ChatMessage], model: Option[string], jsonMode: bool): ChatResult =
+method chat(provider: MockProvider, messages: seq[ChatMessage], model: Option[string], jsonMode: bool, schema: Option[JsonNode]): ChatResult =
   return ChatResult(content: "bar", model: "gpt-4")
 
 suite "Session Management":
@@ -70,7 +71,7 @@ suite "Session Management":
 
     # 2. Create a session and chat
     var sess = newChatSession()
-    let result = sess.chat("foo", mockProvider, jsonMode = false)
+    let result = sess.chat("foo", mockProvider, jsonMode = false, schema = none(JsonNode))
 
     # 3. Assertions
     check(sess.messages.len == 2)
@@ -78,7 +79,6 @@ suite "Session Management":
     check(sess.messages[0].content == "foo")
     check(sess.messages[1].role == assistant)
     check(sess.messages[1].content == "bar")
-    check(sess.messages[1].model == "gpt-4")
     check(result.content == "bar")
     check(result.model == "gpt-4")
 

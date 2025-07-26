@@ -70,7 +70,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     # Call the chat method with test messages and a model
-    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = false)
+    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = false, schema = none(JsonNode))
 
     # Assertions on the captured request details
     check capturedUrl == "https://api.openai.com/v1/chat/completions"
@@ -100,7 +100,7 @@ suite "OpenAI Provider":
       bodyStream: newStringStream("""{"choices": [{"message": {"content": "Another mocked response for custom model."}}]}""")
     )
 
-    let result = customModelProvider.chat(testMessages, model=none(string), jsonMode = false)
+    let result = customModelProvider.chat(testMessages, model=none(string), jsonMode = false, schema = none(JsonNode))
 
     let requestJson = parseJson(capturedRequestBody) # Use the renamed variable here
     check requestJson["model"].getStr() == "my-custom-model-v1" # Verify custom model usage
@@ -116,7 +116,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     expect IOError:
-      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false)
+      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false, schema = none(JsonNode))
 
   test "chat method raises ValueError on empty choices array in successful response":
     mockHttpResponse = Response(
@@ -128,7 +128,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     expect ValueError:
-      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false)
+      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false, schema = none(JsonNode))
 
   test "chat method sends correct request in JSON mode":
     # Configure mock response for a successful API call
@@ -144,7 +144,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     # Call the chat method with test messages and a model
-    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = true)
+    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = true, schema = none(JsonNode))
 
     # Assertions on the captured request details
     let requestJson = parseJson(capturedRequestBody)

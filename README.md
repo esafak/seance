@@ -99,6 +99,16 @@ This will delete all sessions older than 10 days, or whatever you specify with -
   seance chat "This chat should not be saved." --no_session
   ```
 
+- **Using a JSON Schema**: To force the output to be in a specific JSON format, you can use the `--json` flag with the `--schema` flag. This is currently only supported by the Gemini provider.
+
+  ```bash
+  # Create a schema file
+  echo '{"type": "object", "properties": {"recipe_name": {"type": "string"}}}' > schema.json
+
+  # Use the schema
+  seance chat "Give me a recipe for chocolate chip cookies" --provider gemini --json --schema schema.json
+  ```
+
 ## Using as a Library
 
 Séance provides a clean, simple API for interacting with LLMs programmatically.

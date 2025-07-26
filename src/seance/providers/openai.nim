@@ -7,13 +7,17 @@ import jsony
 # --- Internal types for OpenAI API ---
 
 type
+  OpenAIChatRequest* = object of RootObj
+    model*: string
+    messages*: seq[ChatMessage]
+    response_format*: JsonNode
   OpenAIProvider* = ref object of ChatProvider
 
 const ApiUrl = "https://api.openai.com/v1/chat/completions"
 
 # --- Provider Implementation ---
 
-method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false): ChatResult =
+method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false, schema: Option[JsonNode] = none(JsonNode)): ChatResult =
   ## Implementation of the chat method for OpenAI using a live API call
   let usedModel = provider.getFinalModel(model)
   let requestHeaders = newHttpHeaders([
@@ -25,14 +29,16 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
   if jsonMode:
     var response_format = newJObject()
     response_format["type"] = %"json_object"
-    let request = ChatRequest(
+    var messagesWithJson = messages
+    messagesWithJson.insert(ChatMessage(role: system, content: "Always output in JSON format."), 0)
+    let request = OpenAIChatRequest(
       model: usedModel,
-      messages: messages,
+      messages: messagesWithJson,
       response_format: response_format
     )
     requestBody = request.toJson()
   else:
-    let request = ChatRequest(model: usedModel, messages: messages)
+    let request = OpenAIChatRequest(model: usedModel, messages: messages)
     requestBody = request.toJson()
 
   debug "OpenAI Request Body: " & requestBody
