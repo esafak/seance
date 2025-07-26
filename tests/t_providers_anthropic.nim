@@ -43,7 +43,7 @@ suite "Anthropic Provider":
 
     let provider = newProvider(some(Anthropic), some(defaultConf))
     provider.postRequestHandler = mockPostRequestHandler
-    let result = provider.chat(testMessages, some(mockModel))
+    let result = provider.chat(testMessages, some(mockModel), false)
 
     check capturedUrl == "https://api.anthropic.com/v1/messages"
     check capturedHeaders["x-api-key"] == defaultConf.key
@@ -52,7 +52,6 @@ suite "Anthropic Provider":
 
     let requestJson = parseJson(capturedRequestBody)
     check requestJson["model"].getStr() == mockModel
-    check requestJson["max_tokens"].getInt() == DefaultMaxTokens
     check requestJson["messages"][0]["role"].getStr() == "system"
     check requestJson["messages"][1]["role"].getStr() == "user"
 

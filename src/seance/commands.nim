@@ -21,7 +21,8 @@ proc chat*(
   session: Option[string] = none(string),
   verbose: int = 0,
   dryRun: bool = false,
-  noSession: bool = false
+  noSession: bool = false,
+  json: bool = false
 ) =
   ## Sends a single chat prompt to the specified provider and prints the response.
   let stdinContent = if not isatty(stdin) : some(stdin.readAll()) else : none(string)
@@ -99,7 +100,7 @@ proc chat*(
   try:
     let llmProvider: ChatProvider = newProvider(provider, none(ProviderConfig))
     let modelUsed = llmProvider.getFinalModel(model)
-    let result = llmProvider.chat(sessionObj.messages, some(modelUsed))
+    let result = llmProvider.chat(sessionObj.messages, some(modelUsed), json)
     info "Using " & modelUsed & "\n"
     echo result.content
 

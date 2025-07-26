@@ -10,7 +10,7 @@ import times
 import unittest
 
 type MockProvider = ref object of ChatProvider
-method chat(provider: MockProvider, messages: seq[ChatMessage], model: Option[string]): ChatResult =
+method chat(provider: MockProvider, messages: seq[ChatMessage], model: Option[string], jsonMode: bool): ChatResult =
   return ChatResult(content: "bar", model: "gpt-4")
 
 suite "Session Management":
@@ -70,7 +70,7 @@ suite "Session Management":
 
     # 2. Create a session and chat
     var sess = newChatSession()
-    let result = sess.chat("foo", mockProvider)
+    let result = sess.chat("foo", mockProvider, jsonMode = false)
 
     # 3. Assertions
     check(sess.messages.len == 2)

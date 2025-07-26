@@ -1,23 +1,14 @@
 import common
 import ../types
 
-import std/[httpclient, logging, options, strutils, streams]
+import std/[httpclient, logging, options, strutils, streams, json]
 import jsony
 
 # --- Internal types for Anthropic API ---
 type
-  AnthropicChatRequest = object
-    model: string
-    messages: seq[ChatMessage]
-    max_tokens: int
-
   AnthropicContentBlock = object
     `type`: string
     text: string
-
-  AnthropicChatResponse = object
-    content: seq[AnthropicContentBlock]
-    model: string
 
 const
   ApiUrl = "https://api.anthropic.com/v1/messages"
@@ -26,18 +17,21 @@ const
 type
   AnthropicProvider* = ref object of ChatProvider
 
-method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
+method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false): ChatResult =
   ## Implementation of the chat method for Anthropic.
   let usedModel = provider.getFinalModel(model)
-  let requestHeaders = newHttpHeaders([
+  var requestHeaders = newHttpHeaders([
     ("x-api-key", provider.conf.key),
     ("Content-Type", "application/json"),
     ("anthropic-version", "2023-06-01")
   ])
-  let requestBody = AnthropicChatRequest(
+
+  if jsonMode:
+    requestHeaders.add("anthropic-beta", "tools-2024-04-04")
+
+  let requestBody = ChatRequest(
     model: usedModel,
     messages: messages,
-    max_tokens: DefaultMaxTokens
   ).toJson()
 
   debug "Anthropic Request Body: " & requestBody
@@ -53,13 +47,13 @@ method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Opt
     error errorMessage
     raise newException(IOError, errorMessage)
 
-  let apiResponse = responseBodyContent.fromJson(AnthropicChatResponse)
-  if apiResponse.content.len == 0 or apiResponse.content[0].`type` != "text":
+  let apiResponse = responseBodyContent.fromJson(ChatResponse)
+  if apiResponse.content.len == 0 or apiResponse.content[0]["type"].str != "text":
     let errorMessage = "Anthropic response contained no text content."
     error errorMessage
     raise newException(ValueError, errorMessage)
 
   return ChatResult(
-    content: apiResponse.content[0].text,
+    content: apiResponse.content[0]["text"].str,
     model: usedModel # apiResponse.model
   )
