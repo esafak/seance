@@ -1,6 +1,7 @@
 import httpclient
 import strutils
 import tables
+import json
 
 type
   HttpPostHandler* = proc(url: string, body: string, headers: HttpHeaders): Response
@@ -12,8 +13,22 @@ type
     content*: string
     model*: string
 
+  ChatRequest* = object of RootObj
+    model*: string
+    messages*: seq[ChatMessage]
+    response_format*: JsonNode
+    generationConfig*: JsonNode
+
   ChatResult* = object
     content*: string
+    model*: string
+
+  ChatChoice* = object
+    message*: ChatMessage
+
+  ChatResponse* = object
+    choices*: seq[ChatChoice]
+    content*: seq[JsonNode]
     model*: string
 
   ChatProvider* = ref object of RootObj

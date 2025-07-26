@@ -1,34 +1,21 @@
 import common
 import ../types
 
-import std/[httpclient, logging, options, streams]
+import std/[httpclient, logging, options, streams, json]
 import jsony
 
 # --- Internal types for OpenRouter API ---
-# These model the specific JSON structure for the OpenRouter API.
-
 type
-  OpenRouterChatRequest = object
-    model: string
-    messages: seq[ChatMessage]
-
-  OpenRouterChatChoice = object
-    message: ChatMessage
-
-  OpenRouterChatResponse = object
-    choices: seq[OpenRouterChatChoice]
-
-# --- Provider Implementation ---
+  OpenRouterProvider* = ref object of ChatProvider
 
 const
   ApiUrl = "https://openrouter.ai/api/v1/chat/completions"
   Referer = "https://github.com/dmadisetti/seance"
   Title = "Seance"
 
-type
-  OpenRouterProvider* = ref object of ChatProvider
+# --- Provider Implementation ---
 
-method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
+method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false): ChatResult =
   ## Implementation of the chat method for OpenRouter using a live API call
   let usedModel = provider.getFinalModel(model)
   let requestHeaders = newHttpHeaders([
@@ -37,7 +24,20 @@ method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Op
     ("HTTP-Referer", Referer),
     ("X-Title", Title)
   ])
-  let requestBody = OpenRouterChatRequest(model: usedModel, messages: messages).toJson()
+
+  var requestBody: string
+  if jsonMode:
+    var response_format = newJObject()
+    response_format["type"] = %"json_object"
+    let request = ChatRequest(
+      model: usedModel,
+      messages: messages,
+      response_format: response_format
+    )
+    requestBody = request.toJson()
+  else:
+    let request = ChatRequest(model: usedModel, messages: messages)
+    requestBody = request.toJson()
 
   debug "OpenRouter Request Body: " & requestBody
 
@@ -52,7 +52,7 @@ method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Op
     error errorMessage
     raise newException(IOError, errorMessage)
 
-  let apiResponse = responseBodyContent.fromJson(OpenRouterChatResponse)
+  let apiResponse = responseBodyContent.fromJson(ChatResponse)
   let content = try: apiResponse.choices[0].message.content
   except IndexDefect:
     let errorMessage = "OpenRouter response contained no choices."

@@ -1,7 +1,7 @@
 import common
 import ../types
 
-import std/[httpclient, logging, options, strutils, streams]
+import std/[httpclient, logging, options, strutils, streams, json]
 import jsony
 
 # --- Internal types for Gemini API ---
@@ -13,8 +13,8 @@ type
     role: string # "user" or "model"
     parts: seq[GeminiContentPart]
 
-  GeminiChatRequest = object
-    contents: seq[GeminiContent]
+  GenerationConfig = object
+    response_mime_type: string
 
   GeminiCandidate = object
     content: GeminiContent
@@ -33,14 +33,26 @@ proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
     let role = if msg.role == assistant: "model" else: "user"
     result.add(GeminiContent(role: role, parts: @[GeminiContentPart(text: msg.content)]))
 
-method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
+method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false): ChatResult =
   ## Implementation of the chat method for Gemini.
   let usedModel = provider.getFinalModel(model)
   let apiUrl = ApiUrlBase & usedModel & ":generateContent?key=" & provider.conf.key
   let requestHeaders = newHttpHeaders([("Content-Type", "application/json")])
-  let requestBody = GeminiChatRequest(
-    contents: toGeminiContents(messages)
-  ).toJson()
+
+  var requestBody: string
+  if jsonMode:
+    var generationConfig = newJObject()
+    generationConfig["response_mime_type"] = %"application/json"
+    let request = ChatRequest(
+      messages: messages,
+      generationConfig: generationConfig
+    )
+    requestBody = request.toJson()
+  else:
+    let request = ChatRequest(
+      messages: messages
+    )
+    requestBody = request.toJson()
 
   debug "Gemini Request Body: " & requestBody
 

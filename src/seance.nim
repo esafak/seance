@@ -39,7 +39,8 @@ when isMainModule:
         "systemPrompt": "System prompt to guide the model's response.",
         "verbose": "Verbosity level (0=info, 1=debug, 2=all).",
         "dryRun": "If true, prints the final prompt instead of sending it to the LLM.",
-        "noSession": "If true, no session will be loaded or saved."
+        "noSession": "If true, no session will be loaded or saved.",
+        "json": "If true, the response will be in JSON format."
       },
     ],
     [commands.list],

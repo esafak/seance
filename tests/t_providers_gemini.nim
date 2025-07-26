@@ -55,16 +55,16 @@ suite "Gemini Provider":
     const DefaultGeminiModel = DefaultModels[Gemini]
     let provider = newProvider(some(Gemini), some(defaultConf))
     provider.postRequestHandler = mockPostRequestHandler
-    let result = provider.chat(testMessages, model = some(DefaultGeminiModel))
+    let result = provider.chat(testMessages, model = some(DefaultGeminiModel), jsonMode = false)
 
     let expectedUrl = "https://generativelanguage.googleapis.com/v1beta/models/" & DefaultGeminiModel & ":generateContent?key=" & defaultConf.key
     check capturedUrl == expectedUrl
     check capturedHeaders["Content-Type"] == "application/json"
 
     let requestJson = parseJson(capturedRequestBody)
-    check requestJson["contents"][0]["role"].getStr() == "user"
-    check requestJson["contents"][0]["parts"][0]["text"].getStr() == "You are a test assistant for Gemini."
-    check requestJson["contents"][1]["role"].getStr() == "user"
+    check requestJson["messages"][0]["role"].getStr() == "system"
+    check requestJson["messages"][0]["content"].getStr() == "You are a test assistant for Gemini."
+    check requestJson["messages"][1]["role"].getStr() == "user"
 
     check result.content == "Gem City, in the realm of Gemini testing!"
     check result.model == DefaultGeminiModel

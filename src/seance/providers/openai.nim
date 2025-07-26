@@ -1,39 +1,39 @@
 import common
 import ../types
 
-import std/[httpclient, logging, options, strutils, streams]
+import std/[httpclient, logging, options, streams, json]
 import jsony
 
 # --- Internal types for OpenAI API ---
-# These model the specific JSON structure for the OpenAI API.
-
-type
-  OpenAIChatRequest = object
-    model: string
-    messages: seq[ChatMessage]
-    # stream: bool # for later
-
-  OpenAIChatChoice = object
-    message: ChatMessage
-
-  OpenAIChatResponse = object
-    choices: seq[OpenAIChatChoice]
-
-# --- Provider Implementation ---
-
-const ApiUrl = "https://api.openai.com/v1/chat/completions"
 
 type
   OpenAIProvider* = ref object of ChatProvider
 
-method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option[string] = none(string)): ChatResult =
+const ApiUrl = "https://api.openai.com/v1/chat/completions"
+
+# --- Provider Implementation ---
+
+method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false): ChatResult =
   ## Implementation of the chat method for OpenAI using a live API call
   let usedModel = provider.getFinalModel(model)
   let requestHeaders = newHttpHeaders([
     ("Authorization", "Bearer " & provider.conf.key),
     ("Content-Type", "application/json")
   ])
-  let requestBody = OpenAIChatRequest(model: usedModel, messages: messages).toJson()
+
+  var requestBody: string
+  if jsonMode:
+    var response_format = newJObject()
+    response_format["type"] = %"json_object"
+    let request = ChatRequest(
+      model: usedModel,
+      messages: messages,
+      response_format: response_format
+    )
+    requestBody = request.toJson()
+  else:
+    let request = ChatRequest(model: usedModel, messages: messages)
+    requestBody = request.toJson()
 
   debug "OpenAI Request Body: " & requestBody
 
@@ -48,7 +48,7 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
     error errorMessage
     raise newException(IOError, errorMessage)
 
-  let apiResponse = responseBodyContent.fromJson(OpenAIChatResponse)
+  let apiResponse = responseBodyContent.fromJson(ChatResponse)
   let content = try: apiResponse.choices[0].message.content
   except IndexDefect:
     let errorMessage = "OpenAI response contained no choices."
