@@ -70,20 +70,20 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     # Call the chat method with test messages and a model
-    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = false)
+    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = false, schema = none(JsonNode))
 
     # Assertions on the captured request details
-    check capturedUrl == "https://api.openai.com/v1/chat/completions"
+    check capturedUrl == "https://api.openai.com/v1/responses"
 
     check capturedHeaders["Authorization"] == "Bearer " & defaultConf.key
     check capturedHeaders["Content-Type"] == "application/json"
 
     let requestJson = parseJson(capturedRequestBody) # Use the renamed variable here
     check requestJson["model"].getStr() == DefaultOpenAIModel # Verify default model usage
-    check requestJson["messages"][0]["role"].getStr() == "system"
-    check requestJson["messages"][0]["content"].getStr() == "You are a test assistant."
-    check requestJson["messages"][1]["role"].getStr() == "user"
-    check requestJson["messages"][1]["content"].getStr() == "What is the capital of testing?"
+    check requestJson["input"][0]["role"].getStr() == "system"
+    check requestJson["input"][0]["content"].getStr() == "You are a test assistant."
+    check requestJson["input"][1]["role"].getStr() == "user"
+    check requestJson["input"][1]["content"].getStr() == "What is the capital of testing?"
 
     # Assertions on the returned ChatResult
     check result.content == "Paris, in the realm of testing!"
@@ -100,7 +100,7 @@ suite "OpenAI Provider":
       bodyStream: newStringStream("""{"choices": [{"message": {"content": "Another mocked response for custom model."}}]}""")
     )
 
-    let result = customModelProvider.chat(testMessages, model=none(string), jsonMode = false)
+    let result = customModelProvider.chat(testMessages, model=none(string), jsonMode = false, schema = none(JsonNode))
 
     let requestJson = parseJson(capturedRequestBody) # Use the renamed variable here
     check requestJson["model"].getStr() == "my-custom-model-v1" # Verify custom model usage
@@ -116,7 +116,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     expect IOError:
-      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false)
+      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false, schema = none(JsonNode))
 
   test "chat method raises ValueError on empty choices array in successful response":
     mockHttpResponse = Response(
@@ -128,7 +128,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     expect ValueError:
-      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false)
+      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false, schema = none(JsonNode))
 
   test "chat method sends correct request in JSON mode":
     # Configure mock response for a successful API call
@@ -144,11 +144,11 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     # Call the chat method with test messages and a model
-    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = true)
+    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = true, schema = none(JsonNode))
 
     # Assertions on the captured request details
     let requestJson = parseJson(capturedRequestBody)
-    check requestJson["response_format"]["type"].getStr() == "json_object"
+    check requestJson["text"]["format"]["type"].getStr() == "json_schema"
 
     # Assertions on the returned ChatResult
     check result.content == """{"key": "value"}"""

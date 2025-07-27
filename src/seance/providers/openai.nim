@@ -7,13 +7,25 @@ import jsony
 # --- Internal types for OpenAI API ---
 
 type
+  OpenAITextFormat* = object of RootObj
+    `type`*: string
+    strict*: Option[bool]
+    schema*: Option[JsonNode]
+
+  OpenAIText* = object of RootObj
+    format*: OpenAITextFormat
+
+  OpenAIChatRequest* = object of RootObj
+    model*: string
+    input*: seq[ChatMessage]
+    text*: OpenAIText
   OpenAIProvider* = ref object of ChatProvider
 
-const ApiUrl = "https://api.openai.com/v1/chat/completions"
+const ApiUrl = "https://api.openai.com/v1/responses"
 
 # --- Provider Implementation ---
 
-method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false): ChatResult =
+method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false, schema: Option[JsonNode] = none(JsonNode)): ChatResult =
   ## Implementation of the chat method for OpenAI using a live API call
   let usedModel = provider.getFinalModel(model)
   let requestHeaders = newHttpHeaders([
@@ -23,19 +35,19 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
 
   var requestBody: string
   if jsonMode:
-    var response_format = newJObject()
-    response_format["type"] = %"json_object"
-    let request = ChatRequest(
-      model: usedModel,
-      messages: messages,
-      response_format: response_format
-    )
+    let schemaNode = schema.get(%*{"type": "object"})
+    let textFormat = OpenAITextFormat(`type`: "json_schema", strict: some(true), schema: some(schemaNode))
+    let text = OpenAIText(format: textFormat)
+    let request = OpenAIChatRequest(model: usedModel, input: messages, text: text)
     requestBody = request.toJson()
   else:
-    let request = ChatRequest(model: usedModel, messages: messages)
+    let textFormat = OpenAITextFormat(`type`: "text", strict: none(bool), schema: none(JsonNode))
+    let text = OpenAIText(format: textFormat)
+    let request = OpenAIChatRequest(model: usedModel, input: messages, text: text)
     requestBody = request.toJson()
 
-  debug "OpenAI Request Body: " & requestBody
+  info "OpenAI Request Body: " & requestBody
+  debug "curl -X POST " & ApiUrl & " -H \"Authorization: Bearer " & provider.conf.key & "\" -H \"Content-Type: application/json\" -d '" & requestBody & "'"
 
   let response = provider.postRequestHandler(ApiUrl, requestBody, requestHeaders)
   let responseBodyContent = streams.readAll(response.bodyStream)
@@ -49,10 +61,13 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
     raise newException(IOError, errorMessage)
 
   let apiResponse = responseBodyContent.fromJson(ChatResponse)
-  let content = try: apiResponse.choices[0].message.content
-  except IndexDefect:
-    let errorMessage = "OpenAI response contained no choices."
+  if apiResponse.choices.len > 0 and apiResponse.choices[0].message.content.len > 0:
+    let content = apiResponse.choices[0].message.content
+    return ChatResult(content: content, model: usedModel)
+  elif apiResponse.choices.len > 0 and apiResponse.choices[0].message.content.len == 0:
+    let refusal = "empty content"
+    return ChatResult(content: "AI Refusal: " & refusal, model: usedModel)
+  else:
+    let errorMessage = "OpenAI response contained no choices or refusal."
     error errorMessage
     raise newException(ValueError, errorMessage)
-
-  return ChatResult(content: content, model: usedModel)

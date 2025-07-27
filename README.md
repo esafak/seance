@@ -99,6 +99,16 @@ This will delete all sessions older than 10 days, or whatever you specify with -
   seance chat "This chat should not be saved." --no_session
   ```
 
+- **Using a JSON Schema**: To force the output to be in a specific JSON format, you can use the `--json` flag. For the Gemini, Anthropic, and OpenAI providers, you can also use the `--schema` flag to provide a JSON schema to which the output must conform.
+
+  ```bash
+  # Create a schema file
+  echo '{"type": "object", "properties": {"recipe_name": {"type": "string"}}}' > schema.json
+
+  # Use the schema
+  seance chat "Give me a recipe for chocolate chip cookies" --provider gemini --json --schema schema.json
+  ```
+
 ## Using as a Library
 
 Séance provides a clean, simple API for interacting with LLMs programmatically.
@@ -159,7 +169,8 @@ The `chat` functions support these optional parameters:
 proc chat*(content: string, 
           provider: Option[Provider] = none(Provider),     # OpenAI, Anthropic, Gemini, OpenRouter
           model: Option[string] = none(string),            # Override model from config
-          systemPrompt: Option[string] = none(string)      # Set system prompt
+          systemPrompt: Option[string] = none(string),      # Set system prompt
+          schema: Option[string] = none(string)            # Path to a JSON schema file
          ): string
 
 # Session-specific chat  
@@ -167,8 +178,23 @@ proc chat*(session: var Session,
           content: string,
           provider: Option[Provider] = none(Provider), 
           model: Option[string] = none(string),
-          systemPrompt: Option[string] = none(string)      # Only used if session is empty
+          systemPrompt: Option[string] = none(string),      # Only used if session is empty
+          schema: Option[string] = none(string)            # Path to a JSON schema file
          ): string
+
+### JSON Mode
+
+You can also get a JSON response from the providers that support it.
+
+```nim
+import seance
+import std/json
+
+# Get a JSON response
+let response = chat("Give me a recipe for chocolate chip cookies", jsonMode = true)
+let jsonResponse = parseJson(response)
+echo jsonResponse["recipe_name"].getStr()
+```
 ```
 
 Both approaches work:

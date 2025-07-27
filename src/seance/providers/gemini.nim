@@ -13,14 +13,15 @@ type
     role: string # "user" or "model"
     parts: seq[GeminiContentPart]
 
-  GenerationConfig = object
-    response_mime_type: string
-
   GeminiCandidate = object
     content: GeminiContent
 
   GeminiChatResponse = object
     candidates: seq[GeminiCandidate]
+
+  GeminiChatRequest* = object of RootObj
+    contents*: seq[GeminiContent]
+    generationConfig*: JsonNode
 
 const
   ApiUrlBase = "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -33,7 +34,7 @@ proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
     let role = if msg.role == assistant: "model" else: "user"
     result.add(GeminiContent(role: role, parts: @[GeminiContentPart(text: msg.content)]))
 
-method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false): ChatResult =
+method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false, schema: Option[JsonNode] = none(JsonNode)): ChatResult =
   ## Implementation of the chat method for Gemini.
   let usedModel = provider.getFinalModel(model)
   let apiUrl = ApiUrlBase & usedModel & ":generateContent?key=" & provider.conf.key
@@ -43,14 +44,17 @@ method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option
   if jsonMode:
     var generationConfig = newJObject()
     generationConfig["response_mime_type"] = %"application/json"
-    let request = ChatRequest(
-      messages: messages,
+    if schema.isSome:
+      generationConfig["response_schema"] = schema.get
+
+    let request = GeminiChatRequest(
+      contents: toGeminiContents(messages),
       generationConfig: generationConfig
     )
     requestBody = request.toJson()
   else:
-    let request = ChatRequest(
-      messages: messages
+    let request = GeminiChatRequest(
+      contents: toGeminiContents(messages)
     )
     requestBody = request.toJson()
 

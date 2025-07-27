@@ -12,6 +12,7 @@ import std/options
 import std/os
 import std/strutils
 import std/terminal
+import std/json
 
 proc chat*(
   prompt: seq[string],
@@ -22,7 +23,8 @@ proc chat*(
   verbose: int = 0,
   dryRun: bool = false,
   noSession: bool = false,
-  json: bool = false
+  json: bool = false,
+  schema: Option[string] = none(string)
 ) =
   ## Sends a single chat prompt to the specified provider and prints the response.
   let stdinContent = if not isatty(stdin) : some(stdin.readAll()) else : none(string)
@@ -97,21 +99,21 @@ proc chat*(
     sessionObj.messages.add(ChatMessage(role: system, content: systemPrompt.get)) # No model for system/user messages
   sessionObj.messages.add(ChatMessage(role: user, content: finalPrompt)) # No model for system/user messages
 
-  try:
-    let llmProvider: ChatProvider = newProvider(provider, none(ProviderConfig))
-    let modelUsed = llmProvider.getFinalModel(model)
-    let result = llmProvider.chat(sessionObj.messages, some(modelUsed), json)
-    info "Using " & modelUsed & "\n"
-    echo result.content
+  var schemaJson: Option[JsonNode] = none(JsonNode)
+  if schema.isSome:
+    schemaJson = some(parseFile(schema.get))
 
-    if sessionId.len > 0 and not noSession:
-      sessionObj.messages.add(ChatMessage(role: assistant, content: result.content, model: result.model))
-      saveSession(sessionId, sessionObj)
-      if newSessionCreated:
-        stderr.writeLine "\nTo continue this session, call 'seance chat --session=" & sessionId & " ...'"
-  except Exception as e:
-    error "An error occurred during chat: " & e.msg
-    quit(1)
+  let llmProvider: ChatProvider = newProvider(provider, none(ProviderConfig))
+  let modelUsed = llmProvider.getFinalModel(model)
+  let result = llmProvider.chat(sessionObj.messages, some(modelUsed), json, schemaJson)
+  info "Using " & modelUsed & "\n"
+  echo result.content
+
+  if sessionId.len > 0 and not noSession:
+    sessionObj.messages.add(ChatMessage(role: assistant, content: result.content))
+    saveSession(sessionId, sessionObj)
+    if newSessionCreated:
+      stderr.writeLine "\nTo continue this session, call 'seance chat --session=" & sessionId & " ...'"
 
 proc formatAge(age: Duration): string =
   if age.inHours < 1:
@@ -152,24 +154,21 @@ proc list*() =
         let sessionObj = session.loadSession(sessionId)
         if sessionObj.messages.len > 0:
           var description = sessionObj.messages[0].content.strip().splitLines()[0]
-          let lastModel = if sessionObj.messages[^1].role == assistant: sessionObj.messages[^1].model else: ""
           let formattedAge = formatAge(age)
 
           # Truncate description if too long
           if description.len > descriptionAvailableWidth:
             description = description[0 ..< (descriptionAvailableWidth - 3)] & "..."
 
-          sessionData.add((sessionId, age, formattedAge, lastModel, description))
+          sessionData.add((sessionId, age, formattedAge, "", description))
 
           maxSessionIdLen = max(maxSessionIdLen, sessionId.len)
           maxAgeLen = max(maxAgeLen, formattedAge.len)
-          maxModelLen = max(maxModelLen, lastModel.len)
           maxDescriptionLen = max(maxDescriptionLen, description.len)
         else:
           sessionData.add((sessionId, initDuration(0), "(empty)", "(empty)", "(empty)"))
           maxSessionIdLen = max(maxSessionIdLen, sessionId.len)
           maxAgeLen = max(maxAgeLen, "(empty)".len)
-          maxModelLen = max(maxModelLen, "(empty)".len)
           maxDescriptionLen = max(maxDescriptionLen, "(empty)".len)
       except Exception as e:
         corruptFiles.add(sessionFile)

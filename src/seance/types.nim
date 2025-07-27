@@ -11,7 +11,16 @@ type
   ChatMessage* = object
     role*: MessageRole
     content*: string
-    model*: string
+
+  FunctionDeclaration* = object of RootObj
+    name*: string
+    description*: string
+    parameters*: JsonNode
+
+  Tool* = object of RootObj
+    name*: string
+    description*: string
+    input_schema*: JsonNode
 
   ChatRequest* = object of RootObj
     model*: string
