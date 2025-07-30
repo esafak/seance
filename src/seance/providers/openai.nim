@@ -2,20 +2,19 @@ import common
 import ../types
 
 import std/[httpclient, logging, options, streams, json]
-import jsony
 
 # --- Internal types for OpenAI API ---
 
 type
-  OpenAITextFormat* = object of RootObj
+  OpenAITextFormat* = object
     `type`*: string
     strict*: Option[bool]
     schema*: Option[JsonNode]
 
-  OpenAIText* = object of RootObj
+  OpenAIText* = object
     format*: OpenAITextFormat
 
-  OpenAIChatRequest* = object of RootObj
+  OpenAIChatRequest* = object
     model*: string
     input*: seq[ChatMessage]
     text*: OpenAIText
@@ -39,12 +38,12 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
     let textFormat = OpenAITextFormat(`type`: "json_schema", strict: some(true), schema: some(schemaNode))
     let text = OpenAIText(format: textFormat)
     let request = OpenAIChatRequest(model: usedModel, input: messages, text: text)
-    requestBody = request.toJson()
+    requestBody = $(%*request)
   else:
     let textFormat = OpenAITextFormat(`type`: "text", strict: none(bool), schema: none(JsonNode))
     let text = OpenAIText(format: textFormat)
     let request = OpenAIChatRequest(model: usedModel, input: messages, text: text)
-    requestBody = request.toJson()
+    requestBody = $(%*request)
 
   info "OpenAI Request Body: " & requestBody
   debug "curl -X POST " & ApiUrl & " -H \"Authorization: Bearer " & provider.conf.key & "\" -H \"Content-Type: application/json\" -d '" & requestBody & "'"
@@ -60,7 +59,7 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
     error errorMessage
     raise newException(IOError, errorMessage)
 
-  let apiResponse = responseBodyContent.fromJson(ChatResponse)
+  let apiResponse = to(parseJson(responseBodyContent), ChatResponse)
   if apiResponse.choices.len > 0 and apiResponse.choices[0].message.content.len > 0:
     let content = apiResponse.choices[0].message.content
     return ChatResult(content: content, model: usedModel)

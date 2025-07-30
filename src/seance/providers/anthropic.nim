@@ -2,7 +2,6 @@ import common
 import ../types
 
 import std/[httpclient, logging, options, strutils, streams, json]
-import jsony
 
 # --- Internal types for Anthropic API ---
 type
@@ -18,20 +17,26 @@ type
   AnthropicProvider* = ref object of ChatProvider
 
 type
-  ToolChoice* = object of RootObj
+  ToolChoice* = object
     `type`*: string
     name*: string
 
-  AnthropicChatRequest* = object of RootObj
+  AnthropicChatRequest* = object
     model*: string
     messages*: seq[ChatMessage]
     max_tokens*: int
     tools*: seq[Tool]
     tool_choice*: ToolChoice
 
+proc fromAnthropic*(node: JsonNode): ChatResponse =
+  var content: seq[JsonNode] = @[]
+  if node.hasKey("content"):
+    content = to(node["content"], seq[JsonNode])
+  result = ChatResponse(content: content)
+
 proc generateSchema(typeName: string): (Tool, ToolChoice) =
-  let properties = newJObject()
-  properties[typeName] = %newJObject()
+  var properties = newJObject()
+  properties[typeName] = newJObject()
   let schema = %*{"type": "object", "properties": properties}
   let tool = Tool(name: "extract_" & typeName, description: "Extract " & typeName & " from the text.", input_schema: schema)
   let toolChoice = ToolChoice(`type`: "tool", name: "extract_" & typeName)
@@ -50,23 +55,24 @@ method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Opt
   if jsonMode:
     requestHeaders.add("anthropic-beta", "tools-2024-04-04")
     let (tool, toolChoice) = generateSchema("recipe")
-    requestBody = AnthropicChatRequest(
+    let request = AnthropicChatRequest(
       model: usedModel,
       messages: messages,
       max_tokens: DefaultMaxTokens,
       tools: @[tool],
       tool_choice: toolChoice
-    ).toJson()
+    )
+    requestBody = $(%*request)
   else:
     let request = AnthropicChatRequest(
       model: usedModel,
       messages: messages,
       max_tokens: DefaultMaxTokens
     )
-    var jsonRequest = parseJson(request.toJson())
+    var jsonRequest = %*request
     jsonRequest.delete("tools")
     jsonRequest.delete("tool_choice")
-    requestBody = jsonRequest.pretty()
+    requestBody = $jsonRequest
 
   debug "Anthropic Request Body: " & requestBody
 
@@ -81,7 +87,7 @@ method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Opt
     error errorMessage
     raise newException(IOError, errorMessage)
 
-  let apiResponse = responseBodyContent.fromJson(ChatResponse)
+  let apiResponse = fromAnthropic(parseJson(responseBodyContent))
   if apiResponse.content.len == 0:
     let errorMessage = "Anthropic response contained no content."
     error errorMessage
@@ -89,11 +95,11 @@ method chat*(provider: AnthropicProvider, messages: seq[ChatMessage], model: Opt
 
   var content = ""
   for contentBlock in apiResponse.content:
-    if contentBlock["type"].str == "text":
-      content = contentBlock["text"].str
+    if contentBlock["type"].getStr() == "text":
+      content = contentBlock["text"].getStr()
       break
-    elif contentBlock["type"].str == "tool_use":
-      content = contentBlock["input"].pretty()
+    elif contentBlock["type"].getStr() == "tool_use":
+      content = $(contentBlock["input"])
       break
 
   if content.len == 0:

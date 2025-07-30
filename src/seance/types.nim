@@ -12,17 +12,17 @@ type
     role*: MessageRole
     content*: string
 
-  FunctionDeclaration* = object of RootObj
+  FunctionDeclaration* = object
     name*: string
     description*: string
     parameters*: JsonNode
 
-  Tool* = object of RootObj
+  Tool* = object
     name*: string
     description*: string
     input_schema*: JsonNode
 
-  ChatRequest* = object of RootObj
+  ChatRequest* = object
     model*: string
     messages*: seq[ChatMessage]
     response_format*: JsonNode

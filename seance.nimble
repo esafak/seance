@@ -13,4 +13,3 @@ bin           = @["seance"]
 
 # requires "nim >= 2.0"
 requires "cligen >= 1.8.6"
-requires "jsony >= 1.1.5"

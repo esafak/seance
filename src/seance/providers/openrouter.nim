@@ -2,7 +2,6 @@ import common
 import ../types
 
 import std/[httpclient, logging, options, streams, json]
-import jsony
 
 # --- Internal types for OpenRouter API ---
 type
@@ -34,10 +33,10 @@ method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Op
       messages: messages,
       response_format: response_format
     )
-    requestBody = request.toJson()
+    requestBody = $(%*request)
   else:
     let request = ChatRequest(model: usedModel, messages: messages)
-    requestBody = request.toJson()
+    requestBody = $(%*request)
 
   debug "OpenRouter Request Body: " & requestBody
 
@@ -52,7 +51,7 @@ method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Op
     error errorMessage
     raise newException(IOError, errorMessage)
 
-  let apiResponse = responseBodyContent.fromJson(ChatResponse)
+  let apiResponse = to(parseJson(responseBodyContent), ChatResponse)
   let content = try: apiResponse.choices[0].message.content
   except IndexDefect:
     let errorMessage = "OpenRouter response contained no choices."

@@ -2,7 +2,6 @@ import common
 import ../types
 
 import std/[httpclient, logging, options, strutils, streams, json]
-import jsony
 
 # --- Internal types for Gemini API ---
 type
@@ -19,7 +18,7 @@ type
   GeminiChatResponse = object
     candidates: seq[GeminiCandidate]
 
-  GeminiChatRequest* = object of RootObj
+  GeminiChatRequest* = object
     contents*: seq[GeminiContent]
     generationConfig*: JsonNode
 
@@ -28,6 +27,16 @@ const
 
 type
   GeminiProvider* = ref object of ChatProvider
+
+proc fromGemini*(node: JsonNode): ChatResponse =
+  var candidates: seq[JsonNode] = @[]
+  if node.hasKey("candidates"):
+    candidates = to(node["candidates"], seq[JsonNode])
+  var choices: seq[ChatChoice] = @[]
+  for candidate in candidates:
+    let content = candidate["content"]["parts"][0]["text"].getStr()
+    choices.add(ChatChoice(message: ChatMessage(role: assistant, content: content)))
+  result = ChatResponse(choices: choices)
 
 proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
   for msg in messages:
@@ -51,12 +60,14 @@ method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option
       contents: toGeminiContents(messages),
       generationConfig: generationConfig
     )
-    requestBody = request.toJson()
+    requestBody = $(%*request)
   else:
     let request = GeminiChatRequest(
       contents: toGeminiContents(messages)
     )
-    requestBody = request.toJson()
+    var jsonRequest = %*request
+    jsonRequest.delete("generationConfig")
+    requestBody = $jsonRequest
 
   debug "Gemini Request Body: " & requestBody
 
@@ -71,8 +82,8 @@ method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option
     error errorMessage
     raise newException(IOError, errorMessage)
 
-  let apiResponse = responseBodyContent.fromJson(GeminiChatResponse)
-  let content = try: apiResponse.candidates[0].content.parts[0].text
+  let apiResponse = fromGemini(parseJson(responseBodyContent))
+  let content = try: apiResponse.choices[0].message.content
   except IndexDefect:
     let errorMessage = "Gemini response was invalid."
     error errorMessage
