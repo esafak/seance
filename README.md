@@ -169,7 +169,8 @@ The `chat` functions support these optional parameters:
 proc chat*(content: string, 
           provider: Option[Provider] = none(Provider),     # OpenAI, Anthropic, Gemini, OpenRouter
           model: Option[string] = none(string),            # Override model from config
-          systemPrompt: Option[string] = none(string),      # Set system prompt
+          systemPrompt: Option[string] = none(string),     # Set system prompt
+          jsonMode: bool = false,                          # Request JSON output
           schema: Option[string] = none(string)            # Path to a JSON schema file
          ): string
 
@@ -178,7 +179,8 @@ proc chat*(session: var Session,
           content: string,
           provider: Option[Provider] = none(Provider), 
           model: Option[string] = none(string),
-          systemPrompt: Option[string] = none(string),      # Only used if session is empty
+          systemPrompt: Option[string] = none(string),     # Only used if session is empty
+          jsonMode: bool = false,                          # Request JSON output
           schema: Option[string] = none(string)            # Path to a JSON schema file
          ): string
 ```
