@@ -181,6 +181,7 @@ proc chat*(session: var Session,
           systemPrompt: Option[string] = none(string),      # Only used if session is empty
           schema: Option[string] = none(string)            # Path to a JSON schema file
          ): string
+```
 
 ### JSON Mode
 
@@ -194,7 +195,6 @@ import std/json
 let response = chat("Give me a recipe for chocolate chip cookies", jsonMode = true)
 let jsonResponse = parseJson(response)
 echo jsonResponse["recipe_name"].getStr()
-```
 ```
 
 Both approaches work:
