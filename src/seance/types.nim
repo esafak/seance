@@ -1,3 +1,4 @@
+import options
 import httpclient
 import strutils
 import tables
@@ -54,7 +55,7 @@ type
 
   ProviderConfig* = object
     key*: string
-    model*: string
+    model*: Option[string]
 
   SeanceConfig* = object
     providers*: Table[string, ProviderConfig]

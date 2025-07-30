@@ -46,28 +46,52 @@ method chat*(provider: OpenRouterProvider, messages: seq[ChatMessage], model: Op
   ])
 
   var requestBody: string
+  debug "Constructing OpenRouter request body..."
+
+  # Explicitly convert messages to a JsonNode array
+  var messagesJsonArray = newJArray()
+  for msg in messages:
+    messagesJsonArray.add(%*{"role": $(msg.role), "content": msg.content})
+
   if jsonMode:
-    var response_format = newJObject()
-    response_format["type"] = %"json_object"
-    let request = ChatRequest(
-      model: usedModel,
-      messages: messages,
-      response_format: response_format
-    )
-    requestBody = $(%*request)
+    var requestJson = newJObject()
+    requestJson["model"] = %usedModel
+    requestJson["messages"] = messagesJsonArray
+
+    var responseFormatNode = newJObject()
+    if schema.isSome:
+      responseFormatNode["type"] = %"json_schema"
+      debug "Schema option is Some."
+      var finalSchemaNode: JsonNode
+      if schema.get.isNil:
+        error "Schema.get returned nil JsonNode. This should not happen."
+        raise newException(ValueError, "Schema content is nil.")
+      else:
+        debug "Schema.get is not nil. Converting to string and parsing back to force clean copy."
+        finalSchemaNode = parseJson($(schema.get))
+        debug "Successfully parsed schema string back to JsonNode."
+
+      responseFormatNode["json_schema"] = %*{
+        "name": "generated_schema",
+        "strict": true,
+        "schema": finalSchemaNode
+      }
+      debug "Constructed json_schema object: " & $(responseFormatNode["json_schema"])
+    else:
+      responseFormatNode["type"] = %"json_object"
+
+    requestJson["response_format"] = responseFormatNode
+    requestBody = $requestJson
   else:
-    let request = ChatRequest(
-      model: usedModel,
-      messages: messages
-    )
-    var jsonRequest = %*request
-    jsonRequest.delete("response_format")
-    jsonRequest.delete("generationConfig")
-    requestBody = $jsonRequest
+    var requestJson = newJObject()
+    requestJson["model"] = %usedModel
+    requestJson["messages"] = messagesJsonArray
+    requestBody = $requestJson
 
-  debug "OpenRouter Request Body: " & requestBody
-
+  debug "OpenRouter Request Body constructed: " & requestBody
+  debug "Calling postRequestHandler..."
   let response = provider.postRequestHandler(ApiUrl, requestBody, requestHeaders)
+  debug "postRequestHandler returned."
   let responseBodyContent = streams.readAll(response.bodyStream)
 
   debug "OpenRouter Response Status: " & $response.code

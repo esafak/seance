@@ -11,6 +11,7 @@ import std/logging
 import std/options
 import std/os
 import std/strutils
+import std/tables
 import std/terminal
 import std/json
 
@@ -103,7 +104,28 @@ proc chat*(
   if schema.isSome:
     schemaJson = some(parseFile(schema.get))
 
-  let llmProvider: ChatProvider = newProvider(provider, none(ProviderConfig))
+  var usedProvider: Provider
+  if provider.isSome:
+    usedProvider = provider.get()
+  else:
+    usedProvider = config.defaultProvider
+
+  var providerConf: ProviderConfig
+  let providerName = ($usedProvider).normalize()
+  var found = false
+  for k, v in config.providers.mpairs:
+    if k == providerName:
+      providerConf = v
+      found = true
+      break
+
+  if not found:
+    raise newException(ConfigError, "Provider '" & providerName & "' not found in config.")
+
+  if providerConf.key.len == 0:
+    raise newException(ConfigError, "API key for provider '" & providerName & "' is not set.")
+
+  let llmProvider: ChatProvider = newProvider(some(usedProvider), some(providerConf))
   let modelUsed = llmProvider.getFinalModel(model)
   let result = llmProvider.chat(sessionObj.messages, some(modelUsed), json, schemaJson)
   info "Using " & modelUsed & "\n"

@@ -30,7 +30,7 @@ proc mockPostRequestHandler(url: string, requestBodyStr: string, headers: HttpHe
 
 suite "OpenAI Provider":
   # Common setup for OpenAI provider tests
-  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key", model: "")
+  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key", model: none(string))
 
   let testMessages = @[
     ChatMessage(role: system, content: "You are a test assistant."),
@@ -90,7 +90,7 @@ suite "OpenAI Provider":
     check result.model == DefaultOpenAIModel
 
   test "chat method uses specified model if provided in config":
-    let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: "my-custom-model-v1")
+    let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: some("my-custom-model-v1"))
     # Initialize the provider with our custom mock POST request handler
     let customModelProvider = newProvider(some(OpenAI), some(customModelConf))
     customModelProvider.postRequestHandler = mockPostRequestHandler

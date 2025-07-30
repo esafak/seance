@@ -30,7 +30,7 @@ proc mockPostRequestHandler(url: string, requestBodyStr: string, headers: HttpHe
 
 suite "OpenRouter Provider":
   # Common setup for OpenRouter provider tests
-  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key", model: "")
+  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key", model: none(string))
 
   let testMessages = @[
     ChatMessage(role: system, content: "You are a test assistant."),
@@ -92,7 +92,7 @@ suite "OpenRouter Provider":
     check result.model == DefaultOpenRouterModel
 
   test "chat method uses specified model if provided in config":
-    let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: "my-custom-model-v1")
+    let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: some("my-custom-model-v1"))
     # Initialize the provider with our custom mock POST request handler
     let customModelProvider = newProvider(some(OpenRouter), some(customModelConf))
     customModelProvider.postRequestHandler = mockPostRequestHandler

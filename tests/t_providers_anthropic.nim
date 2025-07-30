@@ -20,7 +20,7 @@ proc mockPostRequestHandler(url: string, requestBodyStr: string, headers: HttpHe
   return mockHttpResponse
 
 suite "Anthropic Provider":
-  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key-anthropic", model: "")
+  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key-anthropic", model: none(string))
   let testMessages = @[
     ChatMessage(role: system, content: "You are a test assistant for Anthropic."),
     ChatMessage(role: user, content: "What is the capital of testing?")

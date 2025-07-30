@@ -1,8 +1,7 @@
 from defaults import DefaultProvider, DefaultModels
 import types
 
-import os, tables, streams
-import std/[logging, parsecfg, strutils, terminal, sequtils]
+import std/[ os, tables, streams, options, logging, parsecfg, strutils, terminal, sequtils]
 
 var customConfigPath: string
 
@@ -67,12 +66,12 @@ proc loadConfig*(): SeanceConfig =
           discard
       else:
         if not providersTable.hasKey(currentSection):
-          providersTable[currentSection] = ProviderConfig(key: "", model: "")
+          providersTable[currentSection] = ProviderConfig(key: "", model: none(string))
         case e.key
         of "key":
           providersTable[currentSection].key = e.value
         of "model":
-          providersTable[currentSection].model = e.value
+          providersTable[currentSection].model = some(e.value)
         else:
           discard
     of cfgOption:
@@ -145,7 +144,7 @@ model = $3
     raise newException(ConfigError, "Failed to write config file: " & e.msg)
 
   var providersTable = initTable[string, ProviderConfig]()
-  providersTable[providerName] = ProviderConfig(key: apiKey, model: model)
+  providersTable[providerName] = ProviderConfig(key: apiKey, model: some(model))
 
   return SeanceConfig(
     providers: providersTable,

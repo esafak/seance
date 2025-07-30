@@ -17,7 +17,7 @@ proc mockPostRequestHandler(url: string, requestBodyStr: string, headers: HttpHe
   return mockHttpResponse
 
 suite "Gemini Provider":
-  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key-gemini", model: "")
+  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key-gemini", model: none(string))
   let testMessages = @[
     ChatMessage(role: system, content: "You are a test assistant for Gemini."),
     ChatMessage(role: user, content: "What is the capital of testing?")

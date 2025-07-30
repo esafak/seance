@@ -9,11 +9,12 @@ from providers/openrouter import OpenRouterProvider
 
 export ChatProvider, ChatMessage, MessageRole, ChatResult, Provider, chat
 
-proc newProvider*(provider: Option[Provider] = none(Provider), conf: Option[ProviderConfig] = none(ProviderConfig)): ChatProvider =
-  var providerConf: ProviderConfig
+proc newProvider*(provider: Option[Provider] = none(Provider), providerConf: Option[ProviderConfig] = none(ProviderConfig)): ChatProvider =
+  var finalProviderConf: ProviderConfig
   var usedProvider: Provider
-  if conf.isSome:
-    providerConf = conf.get()
+
+  if providerConf.isSome:
+    finalProviderConf = providerConf.get()
     usedProvider = provider.get(DefaultProvider)
   else:
     let config = loadConfig()
@@ -21,19 +22,19 @@ proc newProvider*(provider: Option[Provider] = none(Provider), conf: Option[Prov
     let providerName = ($usedProvider).normalize()
     if not config.providers.hasKey(providerName):
       raise newException(ConfigError, "Provider '" & providerName & "' not found in config.")
-    providerConf = config.providers[providerName]
+    finalProviderConf = config.providers[providerName]
 
-  if providerConf.key.len == 0:
+  if finalProviderConf.key.len == 0:
     raise newException(ConfigError, "API key for provider '" & $usedProvider & "' is not set.")
 
-  debug "Provider config: " & $providerConf
+  debug "Provider config: " & $finalProviderConf
 
   case usedProvider
   of Anthropic:
-    result = AnthropicProvider(conf: providerConf, defaultModel: DefaultModels[Anthropic], postRequestHandler: defaultHttpPostHandler)
+    result = AnthropicProvider(conf: finalProviderConf, defaultModel: DefaultModels[Anthropic], postRequestHandler: defaultHttpPostHandler)
   of Gemini:
-    result = GeminiProvider(conf: providerConf, defaultModel: DefaultModels[Gemini], postRequestHandler: defaultHttpPostHandler)
+    result = GeminiProvider(conf: finalProviderConf, defaultModel: DefaultModels[Gemini], postRequestHandler: defaultHttpPostHandler)
   of OpenAI:
-    result = OpenAIProvider(conf: providerConf, defaultModel: DefaultModels[OpenAI], postRequestHandler: defaultHttpPostHandler)
+    result = OpenAIProvider(conf: finalProviderConf, defaultModel: DefaultModels[OpenAI], postRequestHandler: defaultHttpPostHandler)
   of OpenRouter:
-    result = OpenRouterProvider(conf: providerConf, defaultModel: DefaultModels[OpenRouter], postRequestHandler: defaultHttpPostHandler)
+    result = OpenRouterProvider(conf: finalProviderConf, defaultModel: DefaultModels[OpenRouter], postRequestHandler: defaultHttpPostHandler)
