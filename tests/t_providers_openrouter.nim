@@ -60,7 +60,7 @@ suite "OpenRouter Provider":
     # Configure mock response for a successful API call
     mockHttpResponse = Response(
       status: "200 OK", # Use status: string instead of code: HttpCode
-      bodyStream: newStringStream("""{"choices": [{"message": {"content": "Paris, in the realm of testing!"}}]}""")
+      bodyStream: newStringStream("""{"choices": [{"message": {"role": "assistant", "content": "Paris, in the realm of testing!"}}]}""")
     )
 
     const DefaultOpenRouterModel = DefaultModels[OpenRouter]
@@ -99,7 +99,7 @@ suite "OpenRouter Provider":
 
     mockHttpResponse = Response(
       status: "200 OK", # Use status: string
-      bodyStream: newStringStream("""{"choices": [{"message": {"content": "Another mocked response for custom model."}}]}""")
+      bodyStream: newStringStream("""{"choices": [{"message": {"role": "assistant", "content": "Another mocked response for custom model."}}]}""")
     )
 
     let result = customModelProvider.chat(testMessages, model=none(string), jsonMode = false, schema = none(JsonNode))

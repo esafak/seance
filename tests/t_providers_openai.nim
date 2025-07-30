@@ -60,7 +60,7 @@ suite "OpenAI Provider":
     # Configure mock response for a successful API call
     mockHttpResponse = Response(
       status: "200 OK", # Use status: string instead of code: HttpCode
-      bodyStream: newStringStream("""{"choices": [{"message": {"content": "Paris, in the realm of testing!"}}]}""")
+      bodyStream: newStringStream("""{"choices": [{"message": {"role": "assistant", "content": "Paris, in the realm of testing!"}}]}""")
     )
 
     const DefaultOpenAIModel = DefaultModels[OpenAI]
@@ -73,17 +73,17 @@ suite "OpenAI Provider":
     let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = false, schema = none(JsonNode))
 
     # Assertions on the captured request details
-    check capturedUrl == "https://api.openai.com/v1/responses"
+    check capturedUrl == "https://api.openai.com/v1/chat/completions"
 
     check capturedHeaders["Authorization"] == "Bearer " & defaultConf.key
     check capturedHeaders["Content-Type"] == "application/json"
 
     let requestJson = parseJson(capturedRequestBody) # Use the renamed variable here
     check requestJson["model"].getStr() == DefaultOpenAIModel # Verify default model usage
-    check requestJson["input"][0]["role"].getStr() == "system"
-    check requestJson["input"][0]["content"].getStr() == "You are a test assistant."
-    check requestJson["input"][1]["role"].getStr() == "user"
-    check requestJson["input"][1]["content"].getStr() == "What is the capital of testing?"
+    check requestJson["messages"][0]["role"].getStr() == "system"
+    check requestJson["messages"][0]["content"].getStr() == "You are a test assistant."
+    check requestJson["messages"][1]["role"].getStr() == "user"
+    check requestJson["messages"][1]["content"].getStr() == "What is the capital of testing?"
 
     # Assertions on the returned ChatResult
     check result.content == "Paris, in the realm of testing!"
@@ -148,7 +148,7 @@ suite "OpenAI Provider":
 
     # Assertions on the captured request details
     let requestJson = parseJson(capturedRequestBody)
-    check requestJson["text"]["format"]["type"].getStr() == "json_schema"
+    check requestJson["response_format"]["type"].getStr() == "json_object"
 
     # Assertions on the returned ChatResult
     check result.content == """{"key": "value"}"""
