@@ -30,7 +30,7 @@ proc mockPostRequestHandler(url: string, requestBodyStr: string, headers: HttpHe
 
 suite "OpenRouter Provider":
   # Common setup for OpenRouter provider tests
-  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key", model: "")
+  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key", model: none(string))
 
   let testMessages = @[
     ChatMessage(role: system, content: "You are a test assistant."),
@@ -60,7 +60,7 @@ suite "OpenRouter Provider":
     # Configure mock response for a successful API call
     mockHttpResponse = Response(
       status: "200 OK", # Use status: string instead of code: HttpCode
-      bodyStream: newStringStream("""{"choices": [{"message": {"content": "Paris, in the realm of testing!"}}]}""")
+      bodyStream: newStringStream("""{"choices": [{"message": {"role": "assistant", "content": "Paris, in the realm of testing!"}}]}""")
     )
 
     const DefaultOpenRouterModel = DefaultModels[OpenRouter]
@@ -70,7 +70,7 @@ suite "OpenRouter Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     # Call the chat method with test messages and a model
-    let result = provider.chat(testMessages, model = some(DefaultOpenRouterModel), jsonMode = false)
+    let result = provider.chat(testMessages, model = some(DefaultOpenRouterModel), jsonMode = false, schema = none(JsonNode))
 
     # Assertions on the captured request details
     check capturedUrl == "https://openrouter.ai/api/v1/chat/completions"
@@ -92,17 +92,17 @@ suite "OpenRouter Provider":
     check result.model == DefaultOpenRouterModel
 
   test "chat method uses specified model if provided in config":
-    let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: "my-custom-model-v1")
+    let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: some("my-custom-model-v1"))
     # Initialize the provider with our custom mock POST request handler
     let customModelProvider = newProvider(some(OpenRouter), some(customModelConf))
     customModelProvider.postRequestHandler = mockPostRequestHandler
 
     mockHttpResponse = Response(
       status: "200 OK", # Use status: string
-      bodyStream: newStringStream("""{"choices": [{"message": {"content": "Another mocked response for custom model."}}]}""")
+      bodyStream: newStringStream("""{"choices": [{"message": {"role": "assistant", "content": "Another mocked response for custom model."}}]}""")
     )
 
-    let result = customModelProvider.chat(testMessages, model=none(string), jsonMode = false)
+    let result = customModelProvider.chat(testMessages, model=none(string), jsonMode = false, schema = none(JsonNode))
 
     let requestJson = parseJson(capturedRequestBody) # Use the renamed variable here
     check requestJson["model"].getStr() == "my-custom-model-v1" # Verify custom model usage
@@ -118,7 +118,7 @@ suite "OpenRouter Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     expect IOError:
-      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false)
+      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false, schema = none(JsonNode))
 
   test "chat method raises ValueError on empty choices array in successful response":
     mockHttpResponse = Response(
@@ -130,4 +130,4 @@ suite "OpenRouter Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     expect ValueError:
-      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false)
+      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false, schema = none(JsonNode))

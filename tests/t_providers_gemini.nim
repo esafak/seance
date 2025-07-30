@@ -17,7 +17,7 @@ proc mockPostRequestHandler(url: string, requestBodyStr: string, headers: HttpHe
   return mockHttpResponse
 
 suite "Gemini Provider":
-  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key-gemini", model: "")
+  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key-gemini", model: none(string))
   let testMessages = @[
     ChatMessage(role: system, content: "You are a test assistant for Gemini."),
     ChatMessage(role: user, content: "What is the capital of testing?")
@@ -55,16 +55,16 @@ suite "Gemini Provider":
     const DefaultGeminiModel = DefaultModels[Gemini]
     let provider = newProvider(some(Gemini), some(defaultConf))
     provider.postRequestHandler = mockPostRequestHandler
-    let result = provider.chat(testMessages, model = some(DefaultGeminiModel), jsonMode = false)
+    let result = provider.chat(testMessages, model = some(DefaultGeminiModel), jsonMode = false, schema = none(JsonNode))
 
     let expectedUrl = "https://generativelanguage.googleapis.com/v1beta/models/" & DefaultGeminiModel & ":generateContent?key=" & defaultConf.key
     check capturedUrl == expectedUrl
     check capturedHeaders["Content-Type"] == "application/json"
 
     let requestJson = parseJson(capturedRequestBody)
-    check requestJson["messages"][0]["role"].getStr() == "system"
-    check requestJson["messages"][0]["content"].getStr() == "You are a test assistant for Gemini."
-    check requestJson["messages"][1]["role"].getStr() == "user"
+    check requestJson["contents"][0]["role"].getStr() == "user"
+    check requestJson["contents"][0]["parts"][0]["text"].getStr() == "You are a test assistant for Gemini."
+    check requestJson["contents"][1]["role"].getStr() == "user"
 
     check result.content == "Gem City, in the realm of Gemini testing!"
     check result.model == DefaultGeminiModel

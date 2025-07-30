@@ -30,7 +30,7 @@ proc mockPostRequestHandler(url: string, requestBodyStr: string, headers: HttpHe
 
 suite "OpenAI Provider":
   # Common setup for OpenAI provider tests
-  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key", model: "")
+  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key", model: none(string))
 
   let testMessages = @[
     ChatMessage(role: system, content: "You are a test assistant."),
@@ -60,7 +60,7 @@ suite "OpenAI Provider":
     # Configure mock response for a successful API call
     mockHttpResponse = Response(
       status: "200 OK", # Use status: string instead of code: HttpCode
-      bodyStream: newStringStream("""{"choices": [{"message": {"content": "Paris, in the realm of testing!"}}]}""")
+      bodyStream: newStringStream("""{"choices": [{"message": {"role": "assistant", "content": "Paris, in the realm of testing!"}}]}""")
     )
 
     const DefaultOpenAIModel = DefaultModels[OpenAI]
@@ -70,7 +70,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     # Call the chat method with test messages and a model
-    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = false)
+    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = false, schema = none(JsonNode))
 
     # Assertions on the captured request details
     check capturedUrl == "https://api.openai.com/v1/chat/completions"
@@ -90,7 +90,7 @@ suite "OpenAI Provider":
     check result.model == DefaultOpenAIModel
 
   test "chat method uses specified model if provided in config":
-    let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: "my-custom-model-v1")
+    let customModelConf: ProviderConfig = ProviderConfig(key: "test-key", model: some("my-custom-model-v1"))
     # Initialize the provider with our custom mock POST request handler
     let customModelProvider = newProvider(some(OpenAI), some(customModelConf))
     customModelProvider.postRequestHandler = mockPostRequestHandler
@@ -100,7 +100,7 @@ suite "OpenAI Provider":
       bodyStream: newStringStream("""{"choices": [{"message": {"content": "Another mocked response for custom model."}}]}""")
     )
 
-    let result = customModelProvider.chat(testMessages, model=none(string), jsonMode = false)
+    let result = customModelProvider.chat(testMessages, model=none(string), jsonMode = false, schema = none(JsonNode))
 
     let requestJson = parseJson(capturedRequestBody) # Use the renamed variable here
     check requestJson["model"].getStr() == "my-custom-model-v1" # Verify custom model usage
@@ -116,7 +116,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     expect IOError:
-      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false)
+      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false, schema = none(JsonNode))
 
   test "chat method raises ValueError on empty choices array in successful response":
     mockHttpResponse = Response(
@@ -128,7 +128,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     expect ValueError:
-      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false)
+      discard provider.chat(testMessages, model = some("gpt-4"), jsonMode = false, schema = none(JsonNode))
 
   test "chat method sends correct request in JSON mode":
     # Configure mock response for a successful API call
@@ -144,7 +144,7 @@ suite "OpenAI Provider":
     provider.postRequestHandler = mockPostRequestHandler
 
     # Call the chat method with test messages and a model
-    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = true)
+    let result = provider.chat(testMessages, model = some(DefaultOpenAIModel), jsonMode = true, schema = none(JsonNode))
 
     # Assertions on the captured request details
     let requestJson = parseJson(capturedRequestBody)

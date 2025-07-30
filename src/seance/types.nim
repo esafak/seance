@@ -1,3 +1,4 @@
+import options
 import httpclient
 import strutils
 import tables
@@ -11,9 +12,18 @@ type
   ChatMessage* = object
     role*: MessageRole
     content*: string
-    model*: string
 
-  ChatRequest* = object of RootObj
+  FunctionDeclaration* = object
+    name*: string
+    description*: string
+    parameters*: JsonNode
+
+  Tool* = object
+    name*: string
+    description*: string
+    input_schema*: JsonNode
+
+  ChatRequest* = object
     model*: string
     messages*: seq[ChatMessage]
     response_format*: JsonNode
@@ -45,7 +55,7 @@ type
 
   ProviderConfig* = object
     key*: string
-    model*: string
+    model*: Option[string]
 
   SeanceConfig* = object
     providers*: Table[string, ProviderConfig]

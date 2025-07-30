@@ -1,6 +1,4 @@
-import std/tables
-import os
-import unittest
+import std/[os, options, unittest, tables]
 
 import seance/[config, providers, types]
 
@@ -35,9 +33,9 @@ key = gem-abcdef
     check config.autoSession == false
     check config.providers.len == 2
     check config.providers["openai"].key == "sk-12345"
-    check config.providers["openai"].model == "gpt-4o"
+    check config.providers["openai"].model == some("gpt-4o")
     check config.providers["gemini"].key == "gem-abcdef"
-    check config.providers["gemini"].model == ""
+    check config.providers["gemini"].model == none(string)
 
   test "raises ConfigError for missing file":
     setConfigPath("non_existent_file.ini")

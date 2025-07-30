@@ -7,7 +7,6 @@ import std/streams
 
 import seance/providers
 import seance/types
-from seance/providers/anthropic import DefaultMaxTokens
 
 var mockHttpResponse: Response
 var capturedUrl: string
@@ -21,7 +20,7 @@ proc mockPostRequestHandler(url: string, requestBodyStr: string, headers: HttpHe
   return mockHttpResponse
 
 suite "Anthropic Provider":
-  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key-anthropic", model: "")
+  let defaultConf: ProviderConfig = ProviderConfig(key: "test-key-anthropic", model: none(string))
   let testMessages = @[
     ChatMessage(role: system, content: "You are a test assistant for Anthropic."),
     ChatMessage(role: user, content: "What is the capital of testing?")
@@ -43,7 +42,7 @@ suite "Anthropic Provider":
 
     let provider = newProvider(some(Anthropic), some(defaultConf))
     provider.postRequestHandler = mockPostRequestHandler
-    let result = provider.chat(testMessages, some(mockModel), false)
+    let result = provider.chat(testMessages, some(mockModel), false, none(JsonNode))
 
     check capturedUrl == "https://api.anthropic.com/v1/messages"
     check capturedHeaders["x-api-key"] == defaultConf.key

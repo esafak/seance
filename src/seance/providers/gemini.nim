@@ -2,7 +2,6 @@ import common
 import ../types
 
 import std/[httpclient, logging, options, strutils, streams, json]
-import jsony
 
 # --- Internal types for Gemini API ---
 type
@@ -13,14 +12,15 @@ type
     role: string # "user" or "model"
     parts: seq[GeminiContentPart]
 
-  GenerationConfig = object
-    response_mime_type: string
-
   GeminiCandidate = object
     content: GeminiContent
 
   GeminiChatResponse = object
     candidates: seq[GeminiCandidate]
+
+  GeminiChatRequest* = object
+    contents*: seq[GeminiContent]
+    generationConfig*: JsonNode
 
 const
   ApiUrlBase = "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -28,12 +28,22 @@ const
 type
   GeminiProvider* = ref object of ChatProvider
 
+proc fromGemini*(node: JsonNode): ChatResponse =
+  var candidates: seq[JsonNode] = @[]
+  if node.hasKey("candidates"):
+    candidates = to(node["candidates"], seq[JsonNode])
+  var choices: seq[ChatChoice] = @[]
+  for candidate in candidates:
+    let content = candidate["content"]["parts"][0]["text"].getStr()
+    choices.add(ChatChoice(message: ChatMessage(role: assistant, content: content)))
+  result = ChatResponse(choices: choices)
+
 proc toGeminiContents(messages: seq[ChatMessage]): seq[GeminiContent] =
   for msg in messages:
     let role = if msg.role == assistant: "model" else: "user"
     result.add(GeminiContent(role: role, parts: @[GeminiContentPart(text: msg.content)]))
 
-method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false): ChatResult =
+method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false, schema: Option[JsonNode] = none(JsonNode)): ChatResult =
   ## Implementation of the chat method for Gemini.
   let usedModel = provider.getFinalModel(model)
   let apiUrl = ApiUrlBase & usedModel & ":generateContent?key=" & provider.conf.key
@@ -43,16 +53,21 @@ method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option
   if jsonMode:
     var generationConfig = newJObject()
     generationConfig["response_mime_type"] = %"application/json"
-    let request = ChatRequest(
-      messages: messages,
+    if schema.isSome:
+      generationConfig["response_schema"] = schema.get
+
+    let request = GeminiChatRequest(
+      contents: toGeminiContents(messages),
       generationConfig: generationConfig
     )
-    requestBody = request.toJson()
+    requestBody = $(%*request)
   else:
-    let request = ChatRequest(
-      messages: messages
+    let request = GeminiChatRequest(
+      contents: toGeminiContents(messages)
     )
-    requestBody = request.toJson()
+    var jsonRequest = %*request
+    jsonRequest.delete("generationConfig")
+    requestBody = $jsonRequest
 
   debug "Gemini Request Body: " & requestBody
 
@@ -67,8 +82,8 @@ method chat*(provider: GeminiProvider, messages: seq[ChatMessage], model: Option
     error errorMessage
     raise newException(IOError, errorMessage)
 
-  let apiResponse = responseBodyContent.fromJson(GeminiChatResponse)
-  let content = try: apiResponse.candidates[0].content.parts[0].text
+  let apiResponse = fromGemini(parseJson(responseBodyContent))
+  let content = try: apiResponse.choices[0].message.content
   except IndexDefect:
     let errorMessage = "Gemini response was invalid."
     error errorMessage
