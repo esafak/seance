@@ -72,7 +72,15 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
   debug "OpenAI Response Body: " & responseBodyContent
 
   if response.code notin {Http200, Http201}:
-    let errorMessage = "OpenAI API Error " & $response.code & ": " & responseBodyContent
+    var errorMessage = "OpenAI API Error " & $response.code
+    try:
+      let errorJson = parseJson(responseBodyContent)
+      if errorJson.hasKey("error") and errorJson["error"].hasKey("message"):
+        errorMessage &= ": " & errorJson["error"]["message"].getStr()
+      else:
+        errorMessage &= ": " & responseBodyContent
+    except JsonParsingError:
+      errorMessage &= ": " & responseBodyContent
     error errorMessage
     raise newException(IOError, errorMessage)
 

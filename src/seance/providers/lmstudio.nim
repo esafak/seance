@@ -8,7 +8,7 @@ import std/[httpclient, json, logging, options, sequtils, streams, strutils, ter
 type
   LMStudioModel* = object
     id*: string
-    state*: string
+    state*: Option[string]
 
   LMStudioModelsResponse* = object
     data*: seq[LMStudioModel]
@@ -60,8 +60,8 @@ method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Opti
         requestedModel = some(m)
         break
 
-    if requestedModel.isSome and requestedModel.get().state != "loaded":
-      let loadedModels = availableModels.data.filter(proc(m: LMStudioModel): bool = m.state == "loaded")
+    if requestedModel.isSome and requestedModel.get().state.get("not-loaded") != "loaded":
+      let loadedModels = availableModels.data.filter(proc(m: LMStudioModel): bool = m.state.get("not-loaded") == "loaded")
       if isatty(stdin):
         echo "The model '", usedModel, "' is not currently loaded."
         if loadedModels.len > 0:
@@ -80,7 +80,7 @@ method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Opti
           if choice != "y":
             quit(0)
   except Exception as e:
-    warn "Could not fetch models from LMStudio: " & e.msg
+    debug "Could not parse the response from LM Studio's /v1/models endpoint. Raw error: " & e.msg
 
   var requestHeaders = newHttpHeaders([
     ("Content-Type", "application/json")
@@ -116,7 +116,15 @@ method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Opti
   debug "LMStudio Response Body: " & responseBodyContent
 
   if response.code notin {Http200, Http201}:
-    let errorMessage = "LMStudio API Error " & $response.code & ": " & responseBodyContent
+    var errorMessage = "LMStudio API Error " & $response.code
+    try:
+      let errorJson = parseJson(responseBodyContent)
+      if errorJson.hasKey("error") and errorJson["error"].hasKey("message"):
+        errorMessage &= ": " & errorJson["error"]["message"].getStr()
+      else:
+        errorMessage &= ": " & responseBodyContent
+    except JsonParsingError:
+      errorMessage &= ": " & responseBodyContent
     error errorMessage
     raise newException(IOError, errorMessage)
 

@@ -97,17 +97,21 @@ suite "LMStudio Provider":
 
     check capturedUrl == customEndpoint
 
-  test "chat method raises IOError on non-2xx HTTP status code":
+  test "chat method raises IOError with parsed message on non-2xx HTTP status code":
+    let errorMessage = "Failed to load model"
     mockHttpResponse = Response(
-      status: "500 Internal Server Error",
-      bodyStream: newStringStream("""{"error": "Something went wrong"}""")
+      status: "404 Not Found",
+      bodyStream: newStringStream("""{"error": {"message": "$1"}}""" % errorMessage)
     )
     let conf = ProviderConfig(key: "", model: none(string), endpoint: none(string))
     let provider = newProvider(some(LMStudio), some(conf))
     provider.postRequestHandler = mockPostRequestHandler
 
-    expect IOError:
+    try:
       discard provider.chat(testMessages, model = none(string), jsonMode = false, schema = none(JsonNode))
+      fail()
+    except IOError as e:
+      check e.msg.contains(errorMessage)
 
   test "chat method raises ValueError on empty choices array":
     mockHttpResponse = Response(
