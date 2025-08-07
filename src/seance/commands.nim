@@ -105,9 +105,14 @@ proc chat*(
 
   let llmProvider: ChatProvider = newProvider(provider)
   let modelUsed = llmProvider.getFinalModel(model)
-  let result = llmProvider.chat(sessionObj.messages, some(modelUsed), json, schemaJson)
-  info "Using " & modelUsed & "\n"
-  echo result.content
+  var result: ChatResult
+  try:
+    result = llmProvider.chat(sessionObj.messages, some(modelUsed), json, schemaJson)
+    info "Using " & modelUsed & "\n"
+    echo result.content
+  except IOError as e:
+    error e.msg
+    quit(1)
 
   if sessionId.len > 0 and not noSession:
     sessionObj.messages.add(ChatMessage(role: assistant, content: result.content))
