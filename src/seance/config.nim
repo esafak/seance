@@ -66,12 +66,14 @@ proc loadConfig*(): SeanceConfig =
           discard
       else:
         if not providersTable.hasKey(currentSection):
-          providersTable[currentSection] = ProviderConfig(key: "", model: none(string))
+          providersTable[currentSection] = ProviderConfig(key: "", model: none(string), endpoint: none(string))
         case e.key
         of "key":
           providersTable[currentSection].key = e.value
         of "model":
           providersTable[currentSection].model = some(e.value)
+        of "endpoint":
+          providersTable[currentSection].endpoint = some(e.value)
         else:
           discard
     of cfgOption:
@@ -84,7 +86,8 @@ proc loadConfig*(): SeanceConfig =
   close(p)
 
   for section, providerConfig in providersTable.pairs:
-    if providerConfig.key.len == 0:
+    let providerEnum = parseProvider(section)
+    if providerConfig.key.len == 0 and providerEnum != LMStudio:
       raise newException(ConfigError, "API key ('key') is missing for provider [" & section & "] in " & configPath)
 
   debug "Config loaded. Default provider: " & $defaultProvider & ", auto session: " & $autoSession
@@ -119,23 +122,28 @@ proc createConfigWizard(): SeanceConfig =
     else:
       echo "Invalid provider. Please choose from the list."
 
-  stdout.write "Now, enter your API key: "
-  let apiKey = stdin.readLine.strip
-
   let providerName = providerStr
   let providerEnum = parseProvider(providerName)
+  var apiKey = ""
+  var endpoint = ""
+
+  if providerEnum != LMStudio:
+    stdout.write "Now, enter your API key: "
+    apiKey = stdin.readLine.strip
+  else:
+    stdout.write "Enter the LM Studio endpoint (or press Enter for default): "
+    endpoint = stdin.readLine.strip
 
   let model = DefaultModels[providerEnum]
 
   # Create the config content
-  let content = """
-[seance]
-default_provider = $1
+  var content = "[seance]\ndefault_provider = $1\n\n[$1]\n" % [providerName]
+  if apiKey.len > 0:
+    content &= "key = $1\n" % [apiKey]
+  if endpoint.len > 0:
+    content &= "endpoint = $1\n" % [endpoint]
+  content &= "model = $1\n" % [model]
 
-[$1]
-key = $2
-model = $3
-""" % [providerName, apiKey, model]
 
   try:
     writeFile(configPath, content)
@@ -144,7 +152,7 @@ model = $3
     raise newException(ConfigError, "Failed to write config file: " & e.msg)
 
   var providersTable = initTable[string, ProviderConfig]()
-  providersTable[providerName] = ProviderConfig(key: apiKey, model: some(model))
+  providersTable[providerName] = ProviderConfig(key: apiKey, model: some(model), endpoint: some(endpoint))
 
   return SeanceConfig(
     providers: providersTable,

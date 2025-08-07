@@ -51,11 +51,13 @@ type
     Anthropic,
     Gemini,
     OpenAI,
-    OpenRouter
+    OpenRouter,
+    LMStudio
 
   ProviderConfig* = object
     key*: string
     model*: Option[string]
+    endpoint*: Option[string]
 
   SeanceConfig* = object
     providers*: Table[string, ProviderConfig]
@@ -70,5 +72,6 @@ proc parseProvider*(providerName: string): Provider =
   of "gemini": result = Gemini
   of "anthropic": result = Anthropic
   of "openrouter": result = OpenRouter
+  of "lmstudio": result = LMStudio
   else: raise newException(ConfigError, "Unknown provider: " & providerName)
 
