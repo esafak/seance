@@ -2,10 +2,16 @@ import ../defaults
 import ../types
 import common
 
-import std/[httpclient, json, logging, options, streams]
+import std/[httpclient, json, logging, options, sequtils, streams, strutils]
 
 # --- Internal types for LMStudio API ---
 type
+  LMStudioModel* = object
+    id*: string
+
+  LMStudioModelsResponse* = object
+    data*: seq[LMStudioModel]
+
   LMStudioChatRequest* = object
     model*: string
     messages*: seq[ChatMessage]
@@ -31,13 +37,30 @@ proc fromLMStudio*(node: JsonNode): ChatResponse =
           messageNode["content"].getStr()
         else: ""
         choices.add(ChatChoice(message: ChatMessage(role: role, content: content)))
-  result = ChatResponse(choices: choices)
+  let model = if node.hasKey("model"): node["model"].getStr() else: ""
+  result = ChatResponse(choices: choices, model: model)
 
 # --- Provider Implementation ---
 
 method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false, schema: Option[JsonNode] = none(JsonNode)): ChatResult =
   ## Implementation of the chat method for LMStudio using a live API call
   let usedModel = provider.getFinalModel(model)
+  let endpoint = provider.conf.endpoint.get(DefaultLMStudioEndpoint)
+  let modelsUrl = endpoint.replace("/chat/completions", "/models")
+
+  try:
+    let modelsResponse = provider.getRequestHandler(modelsUrl)
+    let modelsBody = modelsResponse.body
+    let modelsJson = parseJson(modelsBody)
+    let availableModels = to(modelsJson, LMStudioModelsResponse)
+    let availableModelIds = availableModels.data.map(proc(m: LMStudioModel): string = m.id)
+    if usedModel notin availableModelIds:
+      warn "Model '" & usedModel & "' not found in LMStudio. LMStudio may fall back to another model."
+      if availableModelIds.len > 0:
+        info "Available models: " & availableModelIds.join(", ")
+  except Exception as e:
+    warn "Could not fetch models from LMStudio: " & e.msg
+
   var requestHeaders = newHttpHeaders([
     ("Content-Type", "application/json")
   ])
@@ -62,8 +85,6 @@ method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Opti
     let request = LMStudioChatRequest(model: usedModel, messages: processedMessages)
     requestBody = $(%*request)
 
-  let endpoint = provider.conf.endpoint.get(DefaultLMStudioEndpoint)
-
   info "LMStudio Request Body: " & requestBody
   debug "curl -X POST " & endpoint & " -H \"Content-Type: application/json\" -d '" & requestBody & "'"
 
@@ -81,7 +102,10 @@ method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Opti
   let apiResponse = fromLMStudio(parseJson(responseBodyContent))
   if apiResponse.choices.len > 0 and apiResponse.choices[0].message.content.len > 0:
     let content = apiResponse.choices[0].message.content
-    return ChatResult(content: content, model: usedModel)
+    let model = if apiResponse.model.len > 0: apiResponse.model else: usedModel
+    if model != usedModel:
+      info "Model changed from " & usedModel & " to " & model
+    return ChatResult(content: content, model: model)
   elif apiResponse.choices.len > 0 and apiResponse.choices[0].message.content.len == 0:
     let refusal = "empty content"
     return ChatResult(content: "AI Refusal: " & refusal, model: usedModel)

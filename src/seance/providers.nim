@@ -1,7 +1,7 @@
 import config, logging, options, strutils, tables, types
 from defaults import DefaultModels, DefaultProvider
 
-from providers/common import chat, defaultHttpPostHandler
+from providers/common import chat, defaultHttpPostHandler, defaultHttpGetHandler
 from providers/anthropic import AnthropicProvider
 from providers/gemini import GeminiProvider
 from providers/openai import OpenAIProvider
@@ -36,12 +36,12 @@ proc newProvider*(provider: Option[Provider] = none(Provider), providerConf: Opt
 
   case usedProvider
   of Anthropic:
-    result = AnthropicProvider(conf: finalProviderConf, defaultModel: DefaultModels[Anthropic], postRequestHandler: defaultHttpPostHandler)
+    result = AnthropicProvider(conf: finalProviderConf, defaultModel: DefaultModels[Anthropic], postRequestHandler: defaultHttpPostHandler, getRequestHandler: defaultHttpGetHandler)
   of Gemini:
-    result = GeminiProvider(conf: finalProviderConf, defaultModel: DefaultModels[Gemini], postRequestHandler: defaultHttpPostHandler)
+    result = GeminiProvider(conf: finalProviderConf, defaultModel: DefaultModels[Gemini], postRequestHandler: defaultHttpPostHandler, getRequestHandler: defaultHttpGetHandler)
   of OpenAI:
-    result = OpenAIProvider(conf: finalProviderConf, defaultModel: DefaultModels[OpenAI], postRequestHandler: defaultHttpPostHandler)
+    result = OpenAIProvider(conf: finalProviderConf, defaultModel: DefaultModels[OpenAI], postRequestHandler: defaultHttpPostHandler, getRequestHandler: defaultHttpGetHandler)
   of OpenRouter:
-    result = OpenRouterProvider(conf: finalProviderConf, defaultModel: DefaultModels[OpenRouter], postRequestHandler: defaultHttpPostHandler)
+    result = OpenRouterProvider(conf: finalProviderConf, defaultModel: DefaultModels[OpenRouter], postRequestHandler: defaultHttpPostHandler, getRequestHandler: defaultHttpGetHandler)
   of LMStudio:
-    result = LMStudioProvider(conf: finalProviderConf, defaultModel: DefaultModels[LMStudio], postRequestHandler: defaultHttpPostHandler)
+    result = LMStudioProvider(conf: finalProviderConf, defaultModel: DefaultModels[LMStudio], postRequestHandler: defaultHttpPostHandler, getRequestHandler: defaultHttpGetHandler)

@@ -6,6 +6,7 @@ import json
 
 type
   HttpPostHandler* = proc(url: string, body: string, headers: HttpHeaders): Response
+  HttpGetHandler* = proc(url: string): Response
 
   MessageRole* = enum system, user, assistant
 
@@ -46,6 +47,7 @@ type
     defaultModel*: string
     # Separate out to facilitate mocking
     postRequestHandler*: HttpPostHandler
+    getRequestHandler*: HttpGetHandler
 
   Provider* = enum
     Anthropic,
