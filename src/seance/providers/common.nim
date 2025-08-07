@@ -13,6 +13,11 @@ proc defaultHttpPostHandler*(url: string, body: string, headers: HttpHeaders): R
   client.headers = headers
   result = client.post(url, body = body)
 
+proc defaultHttpGetHandler*(url: string): Response =
+  let client = newHttpClient()
+  defer: client.close()
+  result = client.get(url)
+
 proc getFinalModel*(provider: ChatProvider, model: Option[string] = none(string)): string =
   ## Determines the final model to be used, respecting overrides and defaults.
   return model.get(provider.conf.model.get(provider.defaultModel))

@@ -6,6 +6,7 @@ import json
 
 type
   HttpPostHandler* = proc(url: string, body: string, headers: HttpHeaders): Response
+  HttpGetHandler* = proc(url: string): Response
 
   MessageRole* = enum system, user, assistant
 
@@ -46,16 +47,19 @@ type
     defaultModel*: string
     # Separate out to facilitate mocking
     postRequestHandler*: HttpPostHandler
+    getRequestHandler*: HttpGetHandler
 
   Provider* = enum
     Anthropic,
     Gemini,
     OpenAI,
-    OpenRouter
+    OpenRouter,
+    LMStudio
 
   ProviderConfig* = object
     key*: string
     model*: Option[string]
+    endpoint*: Option[string]
 
   SeanceConfig* = object
     providers*: Table[string, ProviderConfig]
@@ -70,5 +74,6 @@ proc parseProvider*(providerName: string): Provider =
   of "gemini": result = Gemini
   of "anthropic": result = Anthropic
   of "openrouter": result = OpenRouter
+  of "lmstudio": result = LMStudio
   else: raise newException(ConfigError, "Unknown provider: " & providerName)
 

@@ -30,7 +30,8 @@ proc fromOpenAI*(node: JsonNode): ChatResponse =
           messageNode["content"].getStr()
         else: ""
         choices.add(ChatChoice(message: ChatMessage(role: role, content: content)))
-  result = ChatResponse(choices: choices)
+  let model = if node.hasKey("model"): node["model"].getStr() else: ""
+  result = ChatResponse(choices: choices, model: model)
 
 const ApiUrl = "https://api.openai.com/v1/chat/completions"
 
@@ -71,14 +72,24 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
   debug "OpenAI Response Body: " & responseBodyContent
 
   if response.code notin {Http200, Http201}:
-    let errorMessage = "OpenAI API Error " & $response.code & ": " & responseBodyContent
-    error errorMessage
+    var errorMessage = "OpenAI API Error " & $response.code
+    try:
+      let errorJson = parseJson(responseBodyContent)
+      if errorJson.hasKey("error") and errorJson["error"].hasKey("message"):
+        errorMessage &= ": " & errorJson["error"]["message"].getStr()
+      else:
+        errorMessage &= ": " & responseBodyContent
+    except JsonParsingError:
+      errorMessage &= ": " & responseBodyContent
     raise newException(IOError, errorMessage)
 
   let apiResponse = fromOpenAI(parseJson(responseBodyContent))
   if apiResponse.choices.len > 0 and apiResponse.choices[0].message.content.len > 0:
     let content = apiResponse.choices[0].message.content
-    return ChatResult(content: content, model: usedModel)
+    let model = if apiResponse.model.len > 0: apiResponse.model else: usedModel
+    if model != usedModel:
+      info "Model fallback: " & usedModel & " was requested, but " & model & " was used."
+    return ChatResult(content: content, model: model)
   elif apiResponse.choices.len > 0 and apiResponse.choices[0].message.content.len == 0:
     let refusal = "empty content"
     return ChatResult(content: "AI Refusal: " & refusal, model: usedModel)

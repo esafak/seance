@@ -11,7 +11,7 @@ Séance provides a unified interface to communicate with different providers lik
 ## Features
 
 - **Unified CLI**: A single command to interact with multiple LLM providers.
-- **Provider Support**: Currently supports OpenAI, Google Gemini, Anthropic, and OpenRouter.
+- **Provider Support**: Currently supports OpenAI, Google Gemini, Anthropic, OpenRouter, and LMStudio.
 - **Simple Configuration**: Configure all your API keys in a single INI file.
 - **Extensible**: Designed to be easily extendable with new providers.
 
@@ -49,6 +49,11 @@ key = ...
 
 [openrouter]
 key = ...
+
+[lmstudio]
+# No key is needed for LMStudio
+endpoint = http://localhost:1234/v1/chat/completions
+model = Qwen3-4B-Thinking-2507-MLX-8bit
 ```
 
 If your configuration file becomes corrupted, Séance will detect it and offer to delete the file for you.
