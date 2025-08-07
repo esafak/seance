@@ -96,15 +96,21 @@ method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Opti
     processedMessages.add(ChatMessage(role: system, content: "Return the response in JSON format."))
 
   var requestBody: string
+  let request = LMStudioChatRequest(model: usedModel, messages: processedMessages)
+  var requestJson = %*request
   if jsonMode:
-    let schemaNode = schema.get(%*{"type": "object"})
-    let request = LMStudioChatRequest(model: usedModel, messages: processedMessages)
-    var requestJson = %*request
-    requestJson["response_format"] = %*{"type": "json_object"}
-    requestBody = $requestJson
-  else:
-    let request = LMStudioChatRequest(model: usedModel, messages: processedMessages)
-    requestBody = $(%*request)
+    if schema.isSome:
+      requestJson["response_format"] = %*{
+        "type": "json_schema",
+        "json_schema": {
+          "name": "json_schema",
+          "strict": true,
+          "schema": schema.get()
+        }
+      }
+    else:
+      requestJson["response_format"] = %*{"type": "json_object"}
+  requestBody = $requestJson
 
   info "LMStudio Request Body: " & requestBody
   debug "curl -X POST " & endpoint & " -H \"Content-Type: application/json\" -d '" & requestBody & "'"

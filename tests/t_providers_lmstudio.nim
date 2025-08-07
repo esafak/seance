@@ -167,3 +167,25 @@ suite "LMStudio Provider":
     let requestJson = parseJson(capturedRequestBody)
     check requestJson["model"].getStr() == "model-2"
     check result.model == "model-2"
+
+  test "chat method sends correct request with json schema":
+    mockHttpResponse = Response(
+      status: "200 OK",
+      bodyStream: newStringStream("""{"choices": [{"message": {"role": "assistant", "content": "{\"tool_code\":\"ls()\"}"}}]}""")
+    )
+
+    let conf = ProviderConfig(key: "", model: none(string), endpoint: none(string))
+    let provider = newProvider(some(LMStudio), some(conf))
+    provider.postRequestHandler = mockPostRequestHandler
+
+    let schema = %*{"type": "object", "properties": {"tool_code": {"type": "string"}}}
+    let result = provider.chat(testMessages, model = none(string), jsonMode = true, schema = some(schema))
+
+    check capturedUrl == DefaultLMStudioEndpoint
+    let requestJson = parseJson(capturedRequestBody)
+    check requestJson.hasKey("response_format")
+    let responseFormat = requestJson["response_format"]
+    check responseFormat["type"].getStr() == "json_schema"
+    check responseFormat["json_schema"]["name"].getStr() == "json_schema"
+    check responseFormat["json_schema"]["strict"].getBool() == true
+    check responseFormat["json_schema"]["schema"] == schema
