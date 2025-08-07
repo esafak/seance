@@ -2,12 +2,13 @@ import ../defaults
 import ../types
 import common
 
-import std/[httpclient, json, logging, options, sequtils, streams, strutils]
+import std/[httpclient, json, logging, options, sequtils, streams, strutils, terminal]
 
 # --- Internal types for LMStudio API ---
 type
   LMStudioModel* = object
     id*: string
+    state*: string
 
   LMStudioModelsResponse* = object
     data*: seq[LMStudioModel]
@@ -44,7 +45,7 @@ proc fromLMStudio*(node: JsonNode): ChatResponse =
 
 method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Option[string] = none(string), jsonMode: bool = false, schema: Option[JsonNode] = none(JsonNode)): ChatResult =
   ## Implementation of the chat method for LMStudio using a live API call
-  let usedModel = provider.getFinalModel(model)
+  var usedModel = provider.getFinalModel(model)
   let endpoint = provider.conf.endpoint.get(DefaultLMStudioEndpoint)
   let modelsUrl = endpoint.replace("/chat/completions", "/models")
 
@@ -53,11 +54,31 @@ method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Opti
     let modelsBody = modelsResponse.body
     let modelsJson = parseJson(modelsBody)
     let availableModels = to(modelsJson, LMStudioModelsResponse)
-    let availableModelIds = availableModels.data.map(proc(m: LMStudioModel): string = m.id)
-    if usedModel notin availableModelIds:
-      warn "Model '" & usedModel & "' not found in LMStudio. LMStudio may fall back to another model."
-      if availableModelIds.len > 0:
-        info "Available models: " & availableModelIds.join(", ")
+    var requestedModel: Option[LMStudioModel] = none(LMStudioModel)
+    for m in availableModels.data:
+      if m.id == usedModel:
+        requestedModel = some(m)
+        break
+
+    if requestedModel.isSome and requestedModel.get().state != "loaded":
+      let loadedModels = availableModels.data.filter(proc(m: LMStudioModel): bool = m.state == "loaded")
+      if isatty(stdin):
+        echo "The model '", usedModel, "' is not currently loaded."
+        if loadedModels.len > 0:
+          echo "Loaded models are: ", loadedModels.map(proc(m: LMStudioModel): string = m.id).join(", ")
+          stdout.write "Would you like to load '", usedModel, "' or use a loaded model? (load/use) "
+          let choice = stdin.readLine().strip().toLowerAscii()
+          if choice == "use":
+            if loadedModels.len == 1:
+              usedModel = loadedModels[0].id
+            else:
+              stdout.write "Please specify which loaded model to use: "
+              usedModel = stdin.readLine().strip()
+        else:
+          stdout.write "Would you like to load '", usedModel, "'? (y/N) "
+          let choice = stdin.readLine().strip().toLowerAscii()
+          if choice != "y":
+            quit(0)
   except Exception as e:
     warn "Could not fetch models from LMStudio: " & e.msg
 
@@ -104,7 +125,7 @@ method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Opti
     let content = apiResponse.choices[0].message.content
     let model = if apiResponse.model.len > 0: apiResponse.model else: usedModel
     if model != usedModel:
-      info "Model changed from " & usedModel & " to " & model
+      info "Model fallback: " & usedModel & " was requested, but " & model & " was used. This can happen if the requested model is not loaded in LMStudio."
     return ChatResult(content: content, model: model)
   elif apiResponse.choices.len > 0 and apiResponse.choices[0].message.content.len == 0:
     let refusal = "empty content"

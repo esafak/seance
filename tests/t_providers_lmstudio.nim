@@ -140,44 +140,26 @@ suite "LMStudio Provider":
     removeFile(tempConfPath)
     setConfigPath("") # Reset config path
 
-  test "chat method warns when model is not available":
+  test "chat method proceeds when model is not loaded in non-interactive mode":
     # Mock the models endpoint to return a list of available models
     mockModelsResponse = Response(
       status: "200 OK",
-      bodyStream: newStringStream("""{"data": [{"id": "model-1"}, {"id": "model-2"}]}""")
+      bodyStream: newStringStream("""{"data": [{"id": "model-1", "state": "loaded"}, {"id": "model-2", "state": "not-loaded"}]}""")
     )
     # Mock the chat completions endpoint
     mockHttpResponse = Response(
       status: "200 OK",
-      bodyStream: newStringStream("""{"choices": [{"message": {"role": "assistant", "content": "Fallback response!"}}], "model": "model-1"}""")
+      bodyStream: newStringStream("""{"choices": [{"message": {"role": "assistant", "content": "Fallback response!"}}], "model": "model-2"}""")
     )
 
-    let conf = ProviderConfig(key: "", model: some("unlisted-model"), endpoint: none(string))
+    let conf = ProviderConfig(key: "", model: some("model-2"), endpoint: none(string))
     let provider = newProvider(some(LMStudio), some(conf))
     provider.postRequestHandler = mockPostRequestHandler
     provider.getRequestHandler = mockGetRequestHandler
 
-    # Redirect stderr to a file to capture logs
-    let tempLogPath = "temp_test_log.txt"
-    let originalStderr = stderr
-    var f: File
-    discard open(f, tempLogPath, fmWrite)
-    stderr = f
-
-    # The test logger will capture the warning
-    let logger = newConsoleLogger(levelThreshold=lvlWarn, useStderr=true)
-    addHandler(logger)
-
+    # In a non-interactive session, it should just proceed
     let result = provider.chat(testMessages, model = none(string), jsonMode = false, schema = none(JsonNode))
 
-    # Restore stderr and read the log file
-    close(f)
-    stderr = originalStderr
-    let logContent = readFile(tempLogPath)
-    removeFile(tempLogPath)
-
-    # Check that a warning was logged
-    check "not found in LMStudio" in logContent
-
-    # Check that the model from the response is used
-    check result.model == "model-1"
+    let requestJson = parseJson(capturedRequestBody)
+    check requestJson["model"].getStr() == "model-2"
+    check result.model == "model-2"

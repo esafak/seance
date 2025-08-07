@@ -81,7 +81,7 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
     let content = apiResponse.choices[0].message.content
     let model = if apiResponse.model.len > 0: apiResponse.model else: usedModel
     if model != usedModel:
-      info "Model changed from " & usedModel & " to " & model
+      info "Model fallback: " & usedModel & " was requested, but " & model & " was used."
     return ChatResult(content: content, model: model)
   elif apiResponse.choices.len > 0 and apiResponse.choices[0].message.content.len == 0:
     let refusal = "empty content"
