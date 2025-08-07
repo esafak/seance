@@ -125,7 +125,6 @@ method chat*(provider: LMStudioProvider, messages: seq[ChatMessage], model: Opti
         errorMessage &= ": " & responseBodyContent
     except JsonParsingError:
       errorMessage &= ": " & responseBodyContent
-    error errorMessage
     raise newException(IOError, errorMessage)
 
   let apiResponse = fromLMStudio(parseJson(responseBodyContent))

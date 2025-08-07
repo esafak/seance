@@ -81,7 +81,6 @@ method chat*(provider: OpenAIProvider, messages: seq[ChatMessage], model: Option
         errorMessage &= ": " & responseBodyContent
     except JsonParsingError:
       errorMessage &= ": " & responseBodyContent
-    error errorMessage
     raise newException(IOError, errorMessage)
 
   let apiResponse = fromOpenAI(parseJson(responseBodyContent))
