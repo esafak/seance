@@ -39,7 +39,7 @@ auto_session = true
 
 [openai]
 key = sk-...
-model = gpt-4.1-nano-2025-04-14
+`model = gpt-5-nano
 
 [gemini]
 key = ...
@@ -69,8 +69,8 @@ seance chat "What is the speed of light?"
 # Specify a provider for your query
 seance chat "Explain the theory of relativity" --provider gemini
 
-# Use piped content as input
-cat src/seance.nim | seance chat "Explain what this Nim code does."
+# Use piping to write your PR descriptions
+git diff main... | seance chat "Write a conventional commit PR"
 ```
 
 ### 3. Session Management
@@ -104,7 +104,7 @@ This will delete all sessions older than 10 days, or whatever you specify with -
   seance chat "This chat should not be saved." --no_session
   ```
 
-- **Using a JSON Schema**: To force the output to be in a specific JSON format, you can use the `--json` flag. For the Gemini, Anthropic, and OpenAI providers, you can also use the `--schema` flag to provide a JSON schema to which the output must conform.
+- **Using a JSON Schema**: To force the output to be in a specific JSON format, you can use the `--json` flag. For the Gemini, Anthropic, OpenAI, and LMStudio providers, you can also use the `--schema` flag to provide a JSON schema to which the output must conform.
 
   ```bash
   # Create a schema file
