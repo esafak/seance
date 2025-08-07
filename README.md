@@ -53,7 +53,7 @@ key = ...
 [lmstudio]
 # No key is needed for LMStudio
 endpoint = http://localhost:1234/v1/chat/completions
-model = lmstudio-community/gemma-2b-it-v2-GGUF
+model = Qwen3-4B-Thinking-2507-MLX-8bit
 ```
 
 If your configuration file becomes corrupted, Séance will detect it and offer to delete the file for you.

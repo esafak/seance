@@ -111,8 +111,7 @@ proc chat*(
     info "Using " & modelUsed & "\n"
     echo result.content
   except IOError as e:
-    error e.msg
-    quit(1)
+    quit(e.msg)
 
   if sessionId.len > 0 and not noSession:
     sessionObj.messages.add(ChatMessage(role: assistant, content: result.content))
