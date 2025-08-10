@@ -216,6 +216,32 @@ let response = session.chat("Hello!")
 
 That's it! No complex message arrays, no role management, just simple text in and text out with automatic conversation handling.
 
+### Shell Completion
+
+Séance supports shell completion for bash, fish, zsh, and nushell. To enable it, you need to have Carapace installed.
+
+Then, add the following to your shell's configuration file:
+
+**Bash**
+```bash
+source <(seance completion bash)
+```
+
+**Fish**
+```fish
+seance completion fish | source
+```
+
+**Zsh**
+```zsh
+source <(seance completion zsh)
+```
+
+**Nushell**
+```nushell
+seance completion nushell | source
+```
+
 ## Development
 
 To contribute to Séance or run it from the source:
