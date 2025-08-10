@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
 name: seance
 description: A CLI tool and library for interacting with various LLMs
 completion:
@@ -11,45 +12,29 @@ completion:
     - carapace
 
 commands:
-- name: chat
-  description: Sends a single chat prompt to the specified provider and prints the response.
-  flags:
-    --provider:
-      description: LLM provider to use
-      completion:
-        static:
-        - OpenAI
-        - Anthropic
-        - Gemini
-        - OpenRouter
-        - LMStudio
-    --model:
-      description: LLM model to use
-    --system-prompt:
-      description: System prompt to guide the model's response
-    --session:
-      description: UUID session ID
-    --verbose:
-      description: Verbosity level (0=info, 1=debug, 2=all)
-    --dry-run:
-      description: If true, prints the final prompt instead of sending it to the LLM.
-    --no-session:
-      description: If true, no session will be loaded or saved.
-    --json:
-      description: If true, the response will be in JSON format.
-    --schema:
-      description: Path to a JSON schema file
-  arguments:
-    - name: prompt
-      description: Prompt to send to the LLM
-      variadic: true
+  - name: chat
+    description: Sends a single chat prompt to the specified provider and prints the response.
+    flags:
+      --provider=: LLM provider to use
+      --model=: LLM model to use
+      --system-prompt=: System prompt to guide the model's response
+      --session=: UUID session ID
+      --verbose=: Verbosity level (0=info, 1=debug, 2=all)
+      --dry-run: If true, prints the final prompt instead of sending it to the LLM.
+      --no-session: If true, no session will be loaded or saved.
+      --json: If true, the response will be in JSON format.
+      --schema=: Path to a JSON schema file
+    completion:
+      flag:
+        provider: [ openai, anthropic, google ]
+        model: [ gpt-5, gpt-5-mini, gpt-5-nano, claude-3-7-sonnet-latest, claude-3-5-haiku-latest, gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite ]
+        verbose: [ "0", "1", "2" ]
+        schema: [ "$carapace.ActionFiles()" ]
 
-- name: list
-  description: Lists all available sessions.
+  - name: list
+    description: Lists all available sessions.
 
-- name: prune
-  description: Deletes all sessions older than the specified number of days.
-  flags:
-    --days:
-      description: The number of days to keep sessions.
-      default: 10
+  - name: prune
+    description: Deletes all sessions older than the specified number of days.
+    flags:
+      --days: The number of days to keep sessions.

@@ -69,7 +69,7 @@ seance chat "What is the speed of light?"
 # Specify a provider for your query
 seance chat "Explain the theory of relativity" --provider gemini
 
-# Use piping to write your PR descriptions
+# Write your pull request descriptions
 git diff main... | seance chat "Write a conventional commit PR"
 ```
 
@@ -218,18 +218,14 @@ That's it! No complex message arrays, no role management, just simple text in an
 
 ### Shell Completion
 
-Séance uses Carapace to generate shell-specific completions from a single spec. 
-Install Carapace and add the following to your shell’s startup file:
+Séance uses [Carapace](https://carapace.sh/) to generate shell-specific completions. 
+You can generate séance's carapace specification file as follows:
 
-**Bash, Zsh**
-```bash
-source <(seance completion)
+```shell
+seance completion
 ```
 
-**Fish, Nushell**
-```fish
-seance completion | source
-```
+Follow carapace's documentation to install the completions for your shell.
 
 ## Development
 
