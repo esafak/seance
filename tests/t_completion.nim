@@ -1,9 +1,16 @@
-import unittest
-import osproc
-import std/strutils
+import std/[json, os, strutils, syncio, tempfiles, unittest]
+import seance/completion
+import yaml
+
+const yamlPath = joinPath("carapace.yaml")
+const carapaceYaml = readFile(yamlPath)
 
 suite "Carapace completion":
-  test "completion command outputs the spec":
-    let carapaceYaml = readFile("carapace.yaml").strip()
-    let output = execProcess("./seance completion --shell bash").strip()
-    check(output == carapaceYaml)
+  test "completion procedure outputs the spec":
+    check completion() == carapaceYaml
+    echo(len(completion()), ",", len(carapaceYaml))
+
+suite "YAML validation":
+  test "carapace.yaml is valid YAML":
+    var parsed: YamlNode
+    load(carapaceYaml, parsed) # This will raise an exception if the YAML is invalid

@@ -45,5 +45,5 @@ when isMainModule:
     ],
     [commands.list],
     [commands.prune, help = {"days": "The number of days to keep sessions."}],
-    [completion.completion, help = {"shell": "The shell to generate the completion script for."}],
+    [completion.completion],
   )

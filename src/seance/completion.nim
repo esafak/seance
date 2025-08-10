@@ -1,6 +1,7 @@
 import std/os
 
-proc completion*(shell: string) =
+proc completion*() : string =
   ## Outputs the completion script for the specified shell.
-  const carapaceSpec = staticRead(currentSourcePath().parentDir().parentDir().parentDir() / "carapace.yaml")
-  echo carapaceSpec
+  const carapaceYaml = currentSourcePath().parentDir().parentDir().parentDir() / "carapace.yaml"
+  const carapaceSpec = staticRead(carapaceYaml)
+  result = carapaceSpec

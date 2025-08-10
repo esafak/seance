@@ -218,28 +218,17 @@ That's it! No complex message arrays, no role management, just simple text in an
 
 ### Shell Completion
 
-Séance supports shell completion for bash, fish, zsh, and nushell. To enable it, you need to have Carapace installed.
+Séance uses Carapace to generate shell-specific completions from a single spec. 
+Install Carapace and add the following to your shell’s startup file:
 
-Then, add the following to your shell's configuration file:
-
-**Bash**
+**Bash, Zsh**
 ```bash
-source <(seance completion bash)
+source <(seance completion)
 ```
 
-**Fish**
+**Fish, Nushell**
 ```fish
-seance completion fish | source
-```
-
-**Zsh**
-```zsh
-source <(seance completion zsh)
-```
-
-**Nushell**
-```nushell
-seance completion nushell | source
+seance completion | source
 ```
 
 ## Development
