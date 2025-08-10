@@ -1,4 +1,4 @@
-import seance/commands # Import the module containing our command procedures
+import seance/commands, seance/completion # Import the module containing our command procedures
 from seance/simple import chat, newSession, resetSession, Session
 from seance/types import Provider
 
@@ -33,7 +33,7 @@ when isMainModule:
       commands.chat,
       help = {
         "prompt": "Prompt to send to the LLM. Can be combined with stdin input.",
-        "provider": "LLM provider to use: OpenAI, Anthropic, or Gemini.",
+        "provider": "LLM provider to use: OpenAI, Anthropic, Gemini, OpenRouter, or LMStudio.",
         "session": "UUID session ID.",
         "model": "LLM model to use.",
         "systemPrompt": "System prompt to guide the model's response.",
@@ -45,4 +45,5 @@ when isMainModule:
     ],
     [commands.list],
     [commands.prune, help = {"days": "The number of days to keep sessions."}],
+    [completion.completion],
   )

@@ -216,6 +216,21 @@ let response = session.chat("Hello!")
 
 That's it! No complex message arrays, no role management, just simple text in and text out with automatic conversation handling.
 
+### Shell Completion
+
+Séance uses Carapace to generate shell-specific completions from a single spec. 
+Install Carapace and add the following to your shell’s startup file:
+
+**Bash, Zsh**
+```bash
+source <(seance completion)
+```
+
+**Fish, Nushell**
+```fish
+seance completion | source
+```
+
 ## Development
 
 To contribute to Séance or run it from the source:
