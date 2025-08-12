@@ -5,7 +5,7 @@ Séance is a Nim-based library and CLI utility. The core functionality lives in 
 ## Build & Commands
 
 - Install Nim: `curl https://nim-lang.org/choosenim/init.sh -sSf | sh -s -- -y`
-- Add it to your path: `export PATH=/home/jules/.nimble/bin:$PATH`
+- Add it to your path: `export PATH=$HOME/.nimble/bin:$PATH`
 - Install dependencies: `nimble install -d --accept` 
 - Update lock file: `nimble lock`
 - Typecheck and lint: `nim check src/`
